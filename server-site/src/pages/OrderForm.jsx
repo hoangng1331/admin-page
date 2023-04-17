@@ -8,7 +8,7 @@ import {
   Table,
   Space,
   Modal,
-  Descriptions,
+  Popconfirm,
 } from "antd";
 import axios from "axios";
 
@@ -24,7 +24,6 @@ const OrderForm = () => {
   const [orderItems, setOrderItems] = useState([]);
   const [sizeID, setSizeID] = useState([]);
   const [index2, setIndex2] = useState(0);
-  // const [orderItem2, setOrderItem2] = useState([]);
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
   const [selectedRecord, setSelectedRecord] = React.useState(null);
@@ -65,8 +64,12 @@ const OrderForm = () => {
       width: "auto",
       align: "center",
       render: (text, record, index) => {
-        const color = selectedProduct.color.find((color) => color._id === text);
-        return color ? color.name : "";
+        for (let a = 0; a < products.length; a++) {
+          if (products[a]._id === record.productId) {
+            const color = products[a].color.find((color) => color._id === text);
+            return color ? color.name : "";
+          }
+        }
       },
     },
     {
@@ -163,36 +166,58 @@ const OrderForm = () => {
     // Kiểm tra số lượng sản phẩm có sẵn
     if (product.stock === 0) {
       message.error("Sản phẩm " + product.name + " đã hết hàng");
-      // Reset các trường liên quan đến sản phẩm trong Form
-      form.setFieldsValue({
-        selectedProduct: null,
-        selectedColor: null,
-        selectedSize: null,
-        quantity: 1,
+      // Reset
+      setSelectedProduct(null);
+      return;
+    } else {
+      setSelectedProduct(product);
+      setSelectedColor(null);
+      setSelectedSize(null);
+      setQuantity(1);
+    }
+  };
+
+  const handleColorChange = (colorId, record) => {
+    const color = selectedProduct.variants.find((v) => v.colorId === colorId);
+    if (selectedProduct.stockByColor[colorId] === 0) {
+      message.error(
+        "Màu " +
+          record.children[0] +
+          " của " +
+          selectedProduct.name +
+          " đã hết hàng"
+      );
+      // Reset
+      setSelectedColor(null);
+      return null;
+    } else {
+      selectedProduct.variants.find((v, index) => {
+        if (v.colorId === colorId) {
+          setIndex2(index);
+        }
       });
+      setSizeID(color.sizes.map((i) => i.sizeId));
+      setSelectedColor(color);
+      setSelectedSize(null);
+      setQuantity(1);
+    }
+  };
+  const handleSizeChange = (sizeId, record) => {
+    const size = selectedColor.sizes.find((s) => s.sizeId === sizeId);
+    if (record.children[2] === 0) {
+      message.error(
+        "Màu " +
+          selectedProduct.color[index2].name +
+          " cỡ " +
+          record.children[0] +
+          " của " +
+          selectedProduct.name +
+          " đã hết hàng"
+      );
+      // Reset
+      setSelectedSize(null);
       return;
     }
-    setSelectedProduct(product);
-    setSelectedColor(null);
-    setSelectedSize(null);
-    setQuantity(1);
-  };
-
-  const handleColorChange = (colorId) => {
-    const color = selectedProduct.variants.find((v) => v.colorId === colorId);
-    selectedProduct.variants.find((v, index) => {
-      if (v.colorId === colorId) {
-        setIndex2(index);
-      }
-    });
-    setSizeID(color.sizes.map((i) => i.sizeId));
-    setSelectedColor(color);
-    setSelectedSize(null);
-    setQuantity(1);
-  };
-
-  const handleSizeChange = (sizeId) => {
-    const size = selectedColor.sizes.find((s) => s.sizeId === sizeId);
     setSelectedSize(size);
     setQuantity(1);
   };
@@ -269,24 +294,45 @@ const OrderForm = () => {
 
       setRefresh((f) => f + 1);
       setOrderItems([...orderItems, orderItem]);
+      setSelectedProduct(null);
+      setSelectedColor(null);
+      setSelectedSize(null);
+      setQuantity(1);
     }
   };
   const handleFormSubmit = (values) => {
-    const orderDetail = {
-      customerName: values.customerName,
-      phoneNumber: values.phoneNumber,
-      email: values.email,
-      address: values.address,
-      orderItems: orderItems,
-      totalQuantity: totalQuantity,
-      totalValue: totalValue,
-    };
-    message.success("Đã tạo đơn hàng thành công!");
-    console.log(orderDetail);
-    // Xóa toàn bộ record trong bảng
-    setOrderItems([]);
-    // Reset lại các trường trong form
-    form.resetFields();
+    if (orderItems.length === 0) {
+      message.error("Chưa có sản phẩm nào trong đơn hàng");
+    } else {
+      axios
+        .post("http://localhost:5000/orders", {
+          customerName: values.customerName,
+          phoneNumber: values.phoneNumber,
+          email: values.email,
+          address: values.address,
+          orderDetails: orderItems,
+          totalQuantity: totalQuantity,
+          totalValue: totalValue,
+          shippingFee: shippingFee,
+        })
+        .then((response) => {
+          console.log(response);
+          message.success("Đã tạo đơn hàng thành công!");
+          // Xóa toàn bộ record trong bảng
+          setOrderItems([]);
+          setSelectedProduct(null);
+          setSelectedColor(null);
+          setSelectedSize(null);
+          setQuantity(1);
+          // Reset lại các trường trong form
+          form.resetFields();
+          createForm.resetFields();
+          setRefresh((f) => f + 1);
+        })
+        .catch((err) => {
+          message.error("Vui lòng nhập đầy đủ thông tin cần thiết!");
+        });
+    }
   };
   useEffect(() => {
     const getTotal = orderItems.map((i) => Number(i.totalPrice));
@@ -306,7 +352,7 @@ const OrderForm = () => {
 
   return (
     <div>
-      <h1>Đặt hàng</h1>
+      <h2>Thông tin người mua hàng:</h2>
       <Form
         form={createForm}
         name="create-form"
@@ -319,14 +365,14 @@ const OrderForm = () => {
         <Form.Item
           name="customerName"
           label="Tên khách hàng"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Chưa nhập tên khách hàng" }]}
         >
           <Input />
         </Form.Item>
         <Form.Item
           name="phoneNumber"
           label="Số điện thoại"
-          rules={[{ required: true }]}
+          rules={[{ required: true, message: "Chưa nhập số điện thoại" }]}
         >
           <Input />
         </Form.Item>
@@ -344,18 +390,25 @@ const OrderForm = () => {
           <Input />
         </Form.Item>
         <Form.Item
-          name="paymentMethod"
+          name="paymenType"
           label="Phương thức thanh toán"
           rules={[{ required: true }]}
         >
           <Select showSearch optionFilterProp="children">
-            <Option value="cash">Tiền mặt</Option>
-            <Option value="creditCard">Thẻ tín dụng</Option>
-            <Option value="bankTransfer">Chuyển khoản ngân hàng</Option>
+            <Option value="CASH">Tiền mặt</Option>
+            <Option value="CREDIT CARD">Thẻ tín dụng</Option>
+            <Option value="BANK TRANSFER">Chuyển khoản ngân hàng</Option>
           </Select>
         </Form.Item>
-        <Form.Item name="address" label="Địa chỉ" rules={[{ required: true }]}>
+        <Form.Item
+          name="address"
+          label="Địa chỉ"
+          rules={[{ required: true, message: "Chưa nhập địa chỉ" }]}
+        >
           <Input.TextArea />
+        </Form.Item>
+        <Form.Item name="note" label="Ghi chú">
+          <Input />
         </Form.Item>
         <Form.Item label="Phí ship">
           <Select
@@ -370,6 +423,7 @@ const OrderForm = () => {
             </Select.Option>
           </Select>
         </Form.Item>
+        <h2>Chọn sản phẩm để thêm vào đơn hàng:</h2>
         <Form.Item label="Sản phẩm">
           <Select
             value={selectedProduct ? selectedProduct._id : undefined}
@@ -379,7 +433,7 @@ const OrderForm = () => {
           >
             {products.map((product) => (
               <Option key={product._id} value={product._id}>
-                {product.name}
+                {product.name} - Tồn kho: {product.stock}
               </Option>
             ))}
           </Select>
@@ -395,7 +449,8 @@ const OrderForm = () => {
               >
                 {selectedProduct.variants.map((variant, index) => (
                   <Option key={variant.colorId} value={variant.colorId}>
-                    {selectedProduct.color[index].name}
+                    {selectedProduct.color[index].name} - Tồn kho:{" "}
+                    {selectedProduct.stockByColor[variant.colorId]}
                   </Option>
                 ))}
               </Select>
@@ -410,7 +465,8 @@ const OrderForm = () => {
                     {selectedProduct?.size[index2].map((size, index) => {
                       return (
                         <Option key={size._id} value={size._id}>
-                          {size.size}
+                          {size.size} - Tồn kho:{" "}
+                          {selectedColor?.sizes[index]?.quantity}
                         </Option>
                       );
                     })}
@@ -433,21 +489,22 @@ const OrderForm = () => {
             )}
           </>
         )}
-        <Button onClick={handleAddToOrder}>Thêm vào đơn hàng</Button>
-        <h2>Danh sách sản phẩm trong đơn hàng:</h2>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button onClick={handleAddToOrder}>Thêm vào đơn hàng</Button>
+        </div>
+        <h1>Danh sách sản phẩm trong đơn hàng:</h1>
         {orderItems.length > 0 ? (
           <Table
             columns={columns}
             dataSource={orderItems}
             rowKey={(_, record, index) => index}
             pagination={false}
-            tableLayout="horizontal"
             scroll={{
-              y: 400,
+              y: 300,
             }}
             summary={() => {
               return (
-                <>
+                <Table.Summary fixed>
                   <Table.Summary.Row align="right">
                     <Table.Summary.Cell index={0}></Table.Summary.Cell>
                     <Table.Summary.Cell index={1}></Table.Summary.Cell>
@@ -487,14 +544,14 @@ const OrderForm = () => {
                     <Table.Summary.Cell index={3}></Table.Summary.Cell>
                     <Table.Summary.Cell index={4}></Table.Summary.Cell>
                     <Table.Summary.Cell index={5}>
-                      <strong>Tổng giá trị đơn hàng:</strong>
+                      <strong>Tổng cộng:</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={6}>
                       <strong>{totalValue + shippingFee}</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={7}></Table.Summary.Cell>
                   </Table.Summary.Row>
-                </>
+                </Table.Summary>
               );
             }}
           />
@@ -503,7 +560,7 @@ const OrderForm = () => {
         )}
         <Form.Item>
           <Button type="primary" htmlType="submit">
-            Đặt hàng
+            Tạo đơn đặt hàng
           </Button>
         </Form.Item>
       </Form>

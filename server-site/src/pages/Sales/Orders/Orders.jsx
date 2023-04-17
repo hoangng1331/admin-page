@@ -1,11 +1,18 @@
 import React from 'react';
-import { Table, Button, Card, Modal, Descriptions, Divider } from 'antd';
+import { Table, Button, Card, Modal, Descriptions, Divider, Form, Space } from 'antd';
 import { axiosClient } from '../../../libraries/axiosClient';
 import numeral from 'numeral';
 
 export default function Orders() {
   const [addProductsModalVisible, setAddProductsModalVisible] = React.useState(false);
   const [selectedOrder, setSelectedOrder] = React.useState(null);
+  const [orderItems, setOrderItems] = React.useState([]);
+  const [selectedRecord, setSelectedRecord] = React.useState(null);
+  const [editFormVisible, setEditFormVisible] = React.useState(false);
+  const [totalQuantity, setTotalQuantity] = React.useState();
+  const [totalValue, setTotalValue] = React.useState();
+  const [createForm] = Form.useForm();
+  const [updateForm] = Form.useForm();
   // Products
   const [products, setProducts] = React.useState([]);
   React.useEffect(() => {
@@ -16,42 +23,97 @@ export default function Orders() {
 
   const productColumns = [
     {
-      title: 'Số lượng',
-      dataIndex: 'quantity',
-      key: 'quantity',
-    },
-    {
-      title: 'Tên sản phẩm',
-      dataIndex: 'product.name',
-      key: 'product.name',
+      title: "Sản phẩm",
+      dataIndex: "productId",
+      key: "productId",
+      align: "left",
+      width: "auto",
       render: (text, record) => {
-        return <strong>{record?.product?.name}</strong>;
+        const product = products.find((p) => p._id === text);
+        return product ? product.name : "";
       },
     },
     {
-      title: 'Giá',
-      dataIndex: 'product.price',
-      key: 'product.price',
-      render: (text, record) => {
-        return <div style={{ textAlign: 'right' }}>{numeral(record?.product?.price).format('0,0$')}</div>;
+      title: "Màu sắc",
+      dataIndex: "colorId",
+      key: "colorId",
+      width: "auto",
+      align: "center",
+      render: (text, record, index) => {
+        for (let a = 0; a < products.length; a++) {
+          if (products[a]._id === record.productId) {
+        const color = products[a].color.find((color) => color._id === text);
+        return color ? color.name : "";        
+      
+    
+  }
+}
       },
     },
     {
-      title: 'Giảm giá',
-      dataIndex: 'product.discount',
-      key: 'product.discount',
-      render: (text, record) => {
-        return <div style={{ textAlign: 'right' }}>{numeral(record?.product?.discount).format('0,0')}%</div>;
+      title: "Kích cỡ",
+      dataIndex: "sizeId",
+      key: "sizeId",
+      width: "auto",
+      align: "center",
+      render: (text, record, index) => {
+        for (let a = 0; a < products.length; a++) {
+          if (products[a]._id === record.productId) {
+            for (let i = 0; i < products[a].variants.length; i++) {
+              if (products[a].variants[i].colorId === record.colorId) {
+                const size = products[a].size[i].find((s) => s._id === text);
+                if (size) {
+                  return size.size;
+                }
+              }
+            }
+          }
+        }
       },
     },
     {
-      title: '',
-
-      key: 'actions',
-      render: (text, record) => {
-        return (
-          <Button
-            onClick={async () => {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      width: "10%",
+      align: "right",
+    },
+    {
+      title: "Giá",
+      dataIndex: "price",
+      key: "price",
+      align: "right",
+    },
+    {
+      title: "Giảm giá",
+      dataIndex: "discount",
+      key: "discount",
+      align: "center",
+    },
+    {
+      title: "Tổng giá",
+      dataIndex: "totalPrice",
+      align: "right",
+      key: "totalPrice",
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      render: (_, record, index) => {
+                 return (
+            <Space>
+              <Button
+                onClick={() => {
+                  setSelectedRecord(record);
+                  console.log("Selected Record", record);
+                  updateForm.setFieldsValue(record);
+                  setEditFormVisible(true);
+                }}
+              >
+                Chỉnh sửa
+              </Button>
+              <Button
+                onClick={async () => {
               const currentProduct = record;
               console.log('currentProduct', currentProduct);
               const response = await axiosClient.get('orders/' + selectedOrder._id);
@@ -67,12 +129,13 @@ export default function Orders() {
 
               setAddProductsModalVisible(false);
             }}
-          >
-            Xóa
-          </Button>
-        );
+              >
+                Xóa
+              </Button>
+            </Space>
+          );
+        }
       },
-    },
   ];
 
   // Orders

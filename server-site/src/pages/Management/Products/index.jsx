@@ -11,6 +11,7 @@ import {
   Modal,
   Select,
   Upload,
+  Descriptions
 } from "antd";
 import {
   DeleteOutlined,
@@ -23,6 +24,7 @@ import { axiosClient } from "../../../libraries/axiosClient";
 import moment from "moment";
 import numeral from "numeral";
 import { API_URL } from "../../../constants/URLS";
+
 
 export default function Products() {
   const [isPreview, setIsPreview] = React.useState(false);
@@ -215,7 +217,7 @@ export default function Products() {
     },
   ];
   
-
+ 
   const fetchColors = async () => {
     try {
       const response = await axiosClient.get("/colors"); // Thay đổi đường dẫn API tương ứng
@@ -503,9 +505,17 @@ export default function Products() {
         dataSource={products}
         columns={columns}
         pagination={false}
-        scroll={{
-          y: 400,
-        }}
+        rowSelection={{}}
+    expandable={{
+      expandedRowRender: (record) => (
+        
+          <Descriptions bordered>
+        <Descriptions.Item label="Mô tả"
+        >{record.description}
+          </Descriptions.Item>
+          </Descriptions>        
+      ),
+    }}
       />
       <Modal
         centered

@@ -334,9 +334,7 @@ export default function Employees() {
           </Button>
         </Form.Item>
       </Form>
-      <Table rowKey="_id" dataSource={employees} columns={columns} rowSelection={rowSelection} scroll={{
-      y: 400,
-    }}/>
+      <Table rowKey="_id" dataSource={employees} columns={columns} rowSelection={rowSelection}/>
       <Modal
         centered
         open={editFormVisible}
@@ -361,8 +359,8 @@ export default function Employees() {
           autoComplete="on"
         >
           <Form.Item
-            label="Họ"
-            name="firstName"
+            label="Họ và tên lót"
+            name="lastName"
             rules={[{ required: true, message: "Chưa nhập Họ" }]}
             hasFeedback
           >
@@ -371,7 +369,7 @@ export default function Employees() {
 
           <Form.Item
             label="Tên"
-            name="lastName"
+            name="firstName"
             rules={[{ required: true, message: "Chưa nhập Tên" }]}
             hasFeedback
           >
