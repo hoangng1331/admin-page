@@ -586,75 +586,71 @@ const OrderForm = () => {
           onFinish={onUpdateFinish}
           autoComplete="on"
         >
-          <Form.Item label="Sản phẩm">
-            <Select
-              defaultValue={selectedProduct ? selectedProduct._id : undefined}
-              onChange={handleProductChange}
-            >
-              {products.map((product) => (
-                <Option key={product._id} value={product._id} disabled>
-                  {product.name}
-                </Option>
-              ))}
-            </Select>
-          </Form.Item>
-          {selectedProduct && (
-            <>
-              <Form.Item label="Màu sắc">
-                <Select
-                  defaultValue={
-                    selectedColor ? selectedColor.colorId : undefined
-                  }
-                  onChange={handleColorChange}
-                >
-                  {selectedProduct.variants.map((variant, index) => (
-                    <Option
-                      key={variant.colorId}
-                      value={variant.colorId}
-                      disabled
-                    >
-                      {selectedProduct.color[index].name}
-                    </Option>
-                  ))}
-                </Select>
-              </Form.Item>
-              {selectedColor && (
-                <>
-                  <Form.Item label="Kích cỡ">
-                    <Select
-                      defaultValue={
-                        selectedSize ? selectedSize.sizeId : undefined
-                      }
-                      onChange={handleSizeChange}
-                    >
-                      {selectedProduct?.size[index2].map((size, index) => {
-                        return (
-                          <Option key={size._id} value={size._id} disabled>
-                            {size.size}
-                          </Option>
-                        );
-                      })}
-                    </Select>
-                  </Form.Item>
-                  {selectedSize && (
-                    <>
-                      <Form.Item name="quantity" label="Số lượng">
-                        <Input
-                          type="number"
-                          min={1}
-                          max={selectedSize.quantity}
-                          value={quantity}
-                          onChange={(e) =>
-                            setQuantity(parseInt(e.target.value))
-                          }
-                        />
-                      </Form.Item>
-                    </>
-                  )}
-                </>
-              )}
-            </>
-          )}
+         <Form.Item label="Sản phẩm">
+          <Select
+            value={selectedProduct ? selectedProduct._id : undefined}
+            onChange={handleProductChange}
+            showSearch
+            optionFilterProp="children"
+          >
+            {products.map((product) => (
+              <Option key={product._id} value={product._id}>
+                {product.name} - Tồn kho: {product.stock}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+        {selectedProduct && (
+          <>
+            <Form.Item label="Màu sắc">
+              <Select
+                value={selectedColor ? selectedColor.colorId : undefined}
+                onChange={handleColorChange}
+                showSearch
+                optionFilterProp="children"
+              >
+                {selectedProduct.variants.map((variant, index) => (
+                  <Option key={variant.colorId} value={variant.colorId}>
+                    {selectedProduct.color[index].name} - Tồn kho:{" "}
+                    {selectedProduct.stockByColor[variant.colorId]}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+            {selectedColor && (
+              <>
+                <Form.Item label="Kích cỡ">
+                  <Select
+                    value={selectedSize ? selectedSize.sizeId : undefined}
+                    onChange={handleSizeChange}
+                  >
+                    {selectedProduct?.size[index2].map((size, index) => {
+                      return (
+                        <Option key={size._id} value={size._id}>
+                          {size.size} - Tồn kho:{" "}
+                          {selectedColor?.sizes[index]?.quantity}
+                        </Option>
+                      );
+                    })}
+                  </Select>
+                </Form.Item>
+                {selectedSize && (
+                  <>
+                    <Form.Item label="Số lượng">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={selectedSize.quantity}
+                        value={quantity}
+                        onChange={(e) => setQuantity(parseInt(e.target.value))}
+                      />
+                    </Form.Item>
+                  </>
+                )}
+              </>
+            )}
+          </>
+        )}
         </Form>
       </Modal>
     </div>
