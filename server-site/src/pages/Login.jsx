@@ -8,22 +8,6 @@ import {useAuthStore} from '../hooks/useAuthStore'
   const onFinish = (values, e) => {
     const { username, password, role } = values;
     login({ username, password, role });
-    // window.location.href = '/home';
-    
-    //  axiosClient
-    //   .post('/auth/login-jwt', { username, password, role })
-    //   .then((response) => {
-    //     // LOGIN OK
-    //     window.location.href = '/home';
-    //     console.log(response.data);
-    //   })
-    //   .catch((err) => {
-    //     if (err.response.status === 401) {
-    //       message.error('Đăng nhập không thành công!');
-    //       e.preventDefault();
-    //       return false;
-    //     }
-    //   });
   };
 
   const onFinishFailed = (errorInfo, event) => {

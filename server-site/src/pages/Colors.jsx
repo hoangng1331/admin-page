@@ -1,14 +1,15 @@
 import React from "react";
 import axios from "axios";
-import {Form, Button, Select, Input, InputNumber, Table, Space, Modal } from "antd";
-import {Navigate} from "react-router-dom"
+import {Form, Button, Input,  Table, Space, Modal } from "antd";
+import { ChromePicker } from "react-color";
 
-export default function Home () {
+
+export default function ColorForm () {
   const [refresh, setRefresh] = React.useState(0)
   const [colors, setColors] = React.useState([]);
   const [changeModal, setChangeModal] = React.useState(false);
   const [saveChange, setSaveChange] = React.useState(null);
-  
+  const [color, setColor] = React.useState("#ffffff");
    // const [createForm] = Form.useForm;
   const columns = [
     {
@@ -24,24 +25,34 @@ export default function Home () {
       key: 'number',
     },
     {
-      title: 'Mã màu',
-      dataIndex: 'hexcode',
-      key: 'id',
-      width: '1%',
-      align: 'center'
-    },
-    {
       title: 'Tên màu',
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: 'Tùy chọn',
+      title: 'Hexcode',
+      dataIndex: 'hex',
+      key: 'hex',
+      render: (text, record) => (
+        <span>
+          {record.hexcode[0].hex}
+        </span>
+      ),
+    },
+    {
+      title: 'Xem trước',
+      dataIndex: 'preview',
+      key: 'preview',
+      render: (text, record) => (
+        <span style={{ backgroundColor: record.hexcode[0].hex, display: 'inline-block', width: '30px', height: '30px' }}></span>
+      ),
+    },
+    {
       key: 'action',
       render: (text, record, index)=>{
-          return (<Space>
+          return (
             <Button onClick={() => changeData(record)}>Sửa</Button> 
-            <Button onClick={() => deleteData(record._id)}>Xóa</Button></Space>)
+          )
       }
     },  
   ]
@@ -49,7 +60,7 @@ export default function Home () {
         axios.get('http://localhost:5000/colors').then((response)=>
         setColors(response.data));
     }, [refresh]);
-    const onFinish = (values: any) => {
+    const onFinish = (values) => {
       console.log('Success:', values);
       axios.post('http://localhost:5000/colors', values).then((response)=>{
         
@@ -67,9 +78,12 @@ export default function Home () {
       console.log(response.data)
       })
     };
+    const handleColorChange = (newColor) => {
+      setColor(newColor.hex); // lưu giá trị màu khi thay đổi vào state
+    }
     const [createForm] = Form.useForm();
     const [updateForm] = Form.useForm();
-    const onFinishFailed = (errorInfo: any) => {
+    const onFinishFailed = (errorInfo) => {
       console.log('Failed:', errorInfo);
     };
     const changeData =(data)=>{
@@ -77,12 +91,6 @@ export default function Home () {
       setSaveChange(data)
       updateForm.setFieldsValue(data)
     }
-    const deleteData =(_id)=>{
-      axios.delete('http://localhost:5000/colors/'+ _id).then((response)=>{
-        console.log(response);
-        setRefresh((f)=> f + 1);
-      })
-        }
     return <div>
         <Form
     form={createForm}
@@ -106,7 +114,7 @@ export default function Home () {
       name="hexcode"
       rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm!' }]}
     >
-      <Input />
+      <ChromePicker color={color} onChange={handleColorChange} />
     </Form.Item>
         <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
       <Button type="primary" htmlType="submit">
@@ -114,7 +122,7 @@ export default function Home () {
       </Button>
     </Form.Item>
       </Form>
-       <Table rowKey='_id' dataSource={colors} columns = {columns} pagination={false}/>
+       <Table rowKey='_id' dataSource={colors.map((item) => ({ ...item, key: item._id }))} columns = {columns} pagination={false} scroll={{ y: "200px"}}/>
        <Modal open={changeModal}
        title='Cập nhật thông tin sản phẩm'
        onCancel={()=> setChangeModal(false)}
@@ -133,7 +141,7 @@ export default function Home () {
     onFinishFailed={onFinishFailed}
     autoComplete="off"
     >
-       <Form.Item
+      <Form.Item
       label="Tên màu"
       name="name"
       rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm!' }]}
@@ -145,7 +153,7 @@ export default function Home () {
       name="hexcode"
       rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm!' }]}
     >
-      <Input />
+      <ChromePicker color={color} onChange={handleColorChange} />
     </Form.Item>
       </Form>
          </Modal>

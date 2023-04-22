@@ -9,6 +9,7 @@ import {
   Space,
   Modal,
   Select,
+  DatePicker,
 } from "antd";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 
@@ -21,14 +22,14 @@ export default function Employees() {
   const [refresh, setRefresh] = React.useState(0);
   const [editFormVisible, setEditFormVisible] = React.useState(false);
   const [accountLogin, setAccountLogin] = React.useState([]);
-  const [number, setNumber] = React.useState();
+  const [birthday, setBirthday] = React.useState(null);
   const [idSelect, setIdSelect] = React.useState();
+  const [showDeliveryArea, setShowDeliveryArea] = React.useState(false);
   React.useEffect(() => {
     async function fetchData() {
       try {
         const response = await axiosClient.get("/login/");
-        setAccountLogin(response.data.map((item,index) => item._id));
-        console.log("Login:", accountLogin);
+        setAccountLogin(response.data.map((item, index) => item._id));
       } catch (error) {
         console.log(error);
       }
@@ -38,16 +39,16 @@ export default function Employees() {
 
   const columns = [
     {
-      title: 'STT', 
-      width: '1%',
+      title: "STT",
+      width: "1%",
       render: (text, record, index) => {
         return (
-          <div style = {{textAlign: 'right'}}>
-            <span>{index+1}</span>
+          <div style={{ textAlign: "right" }}>
+            <span>{index + 1}</span>
           </div>
-        )
+        );
       },
-      key: 'number',
+      key: "number",
     },
     {
       title: "Họ và tên",
@@ -58,21 +59,18 @@ export default function Employees() {
       },
     },
     {
+      title: "Ngày sinh",
+      dataIndex: "birthday",
+      key: "birthday",
+      width: "1%",
+      render: (text) => {
+        return <span>{moment(text).format("DD/MM/yyyy")}</span>;
+      },
+    },
+    {
       title: "Công việc",
       dataIndex: "role",
       key: "role",
-      width: "1%",
-    },
-    {
-      title: "Tên đăng nhập",
-      dataIndex: "username",
-      key: "username",
-      width: "1%",
-    },
-    {
-      title: "Mật khẩu",
-      dataIndex: "password",
-      key: "password",
       width: "1%",
     },
     {
@@ -96,42 +94,43 @@ export default function Employees() {
       width: "1%",
     },
     {
-      title: "Ngày sinh",
-      dataIndex: "birthday",
-      key: "birthday",
+      title: "Tên đăng nhập",
+      dataIndex: "username",
+      key: "username",
       width: "1%",
-      render: (text) => {
-        return <span>{moment(text).format("DD/MM/yyyy")}</span>;
-      },
+    },
+    {
+      title: "Mật khẩu",
+      dataIndex: "password",
+      key: "password",
+      width: "1%",
     },
     {
       title: "",
       key: "actions",
       width: "1%",
-      render: (text, record,index) => {
+      render: (text, record, index) => {
         return (
           <Space>
             <Popconfirm
               style={{ width: 800 }}
               title="Are you sure to delete?"
               onConfirm={() => {
+                setIdSelect(index + 1);
                 // DELETE
                 const id = record._id;
-
                 axiosClient
-                  .delete("/employees/" + id)
+                  .delete("/login/employeeId/" + id)
                   .then((response) => {
-                    message.success("Xóa thành công!");
-                    setRefresh((f) => f + 1);
-                  })
-                  .catch((err) => {
-                    message.error("Xóa bị lỗi!");
-                  });
-                console.log("DELETE", record);
-                axiosClient
-                  .delete("/login/" + accountLogin[idSelect])
-                  .then((response) => {
-                    message.success("Xóa thành công!");
+                    axiosClient
+                      .delete("/employees/" + id)
+                      .then((response) => {
+                        message.success("Xóa thành công!");
+                        setRefresh((f) => f + 1);
+                      })
+                      .catch((err) => {
+                        message.error("Xóa bị lỗi!");
+                      });
                     setRefresh((f) => f + 1);
                   })
                   .catch((err) => {
@@ -143,14 +142,21 @@ export default function Employees() {
               okText="Đồng ý"
               cancelText="Đóng"
             >
-              <Button danger type="dashed" icon={<DeleteOutlined />} />
+              <Button
+                danger
+                type="dashed"
+                icon={<DeleteOutlined />}
+                onClick={() => {
+                  setIdSelect(index + 1);
+                }}
+              />
             </Popconfirm>
             <Button
               type="dashed"
               icon={<EditOutlined />}
               onClick={() => {
+                setIdSelect(index + 1);
                 const id = record._id;
-                setIdSelect(index+1);
                 axiosClient.get("/login/").then((response) => {
                   setAccountLogin(response.data.map((item) => item._id));
                   console.log("Login:", accountLogin);
@@ -158,16 +164,14 @@ export default function Employees() {
                   console.log("Selected Record", id);
                   updateForm.setFieldsValue(record);
                   setEditFormVisible(true);
-                  });             
-                
-                }}
+                });
+              }}
             />
           </Space>
         );
       },
     },
   ];
-
   React.useEffect(() => {
     axiosClient.get("/employees").then((response) => {
       setEmployees(response.data);
@@ -195,7 +199,7 @@ export default function Employees() {
     axiosClient
       .patch("/employees/" + selectedRecord._id, values)
       .then((response) => {
-                console.log("Select:", accountLogin[idSelect]);
+        console.log("Select:", accountLogin[idSelect]);
         message.success("Cập nhật thành công!");
         updateForm.resetFields();
         setRefresh((f) => f + 1);
@@ -227,10 +231,14 @@ export default function Employees() {
   const [updateForm] = Form.useForm();
   const rowSelection = {
     onChange: (selectedRowKeys, selectedRows) => {
-      console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
+      console.log(
+        `selectedRowKeys: ${selectedRowKeys}`,
+        "selectedRows: ",
+        selectedRows
+      );
     },
     getCheckboxProps: (record) => ({
-      disabled: record.name === 'Disabled User',
+      disabled: record.name === "Disabled User",
       // Column configuration not to be checked
       name: record.name,
     }),
@@ -294,9 +302,12 @@ export default function Employees() {
         >
           <Input placeholder="Số nhà, tên đường, Quận/Huyện, Thành phố/Tỉnh" />
         </Form.Item>
-
-        <Form.Item label="Ngày sinh" name="birthday">
-          <Input placeholder="MM/DD/YYYY hoặc YYYY/MM/DD" />
+        <Form.Item
+          label="Ngày sinh"
+          name="birthday"
+          rules={[{ required: true, message: "Chưa chọn ngày sinh" }]}
+        >
+          <DatePicker />
         </Form.Item>
         <Form.Item
           label="Vị trí công việc"
@@ -304,7 +315,7 @@ export default function Employees() {
           rules={[{ required: true, message: "Chưa chọn vị trí công việc" }]}
           hasFeedback
         >
-          <Select placeholder="Chọn vị trí công việc">
+          <Select placeholder="Chọn vị trí công việc" onChange={(value) => setShowDeliveryArea(value === "Giao hàng")}>
             <Select.Option value="Chăm sóc khách hàng">
               Chăm sóc khách hàng
             </Select.Option>
@@ -312,6 +323,24 @@ export default function Employees() {
             <Select.Option value="Quản lý">Quản lý</Select.Option>
           </Select>
         </Form.Item>
+        {showDeliveryArea && (
+          <Form.Item
+            label="Khu vực giao hàng"
+            name="deliveryArea"
+            rules={[{ required: true, message: "Chưa chọn khu vực giao hàng" }]}
+            hasFeedback
+          >
+            <Select placeholder="Chọn khu vực giao hàng">
+              <Select.Option value="Hòa Vang">Hòa Vang</Select.Option>
+              <Select.Option value="Hải Châu">Hải Châu</Select.Option>
+              <Select.Option value="Thanh Khê">Thanh Khê</Select.Option>
+              <Select.Option value="Liên Chiểu">Liên Chiểu</Select.Option>
+              <Select.Option value="Cẩm Lệ">Cẩm Lệ</Select.Option>
+              <Select.Option value="Ngũ Hành Sơn">Ngũ Hành Sơn</Select.Option>
+              <Select.Option value="Sơn Trà">Sơn Trà</Select.Option>
+            </Select>
+          </Form.Item>
+        )}
         <Form.Item
           label="Tên đăng nhập"
           name="username"
@@ -334,7 +363,12 @@ export default function Employees() {
           </Button>
         </Form.Item>
       </Form>
-      <Table rowKey="_id" dataSource={employees} columns={columns} rowSelection={rowSelection}/>
+      <Table
+        rowKey="_id"
+        dataSource={employees}
+        columns={columns}
+        rowSelection={rowSelection}
+      />
       <Modal
         centered
         open={editFormVisible}
@@ -415,7 +449,7 @@ export default function Employees() {
             rules={[{ required: true, message: "Chưa chọn vị trí công việc" }]}
             hasFeedback
           >
-            <Select placeholder="Chọn vị trí công việc" readOnly>
+            <Select placeholder="Chọn vị trí công việc" disabled>
               <Select.Option value="Chăm sóc khách hàng">
                 Chăm sóc khách hàng
               </Select.Option>

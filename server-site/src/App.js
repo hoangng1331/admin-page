@@ -31,12 +31,10 @@ function App() {
   const [name, setName]=React.useState("");
   React.useEffect((e) => {
     if (auth){
-    axiosClient.get("/login/username/" + auth?.loggedInUser?.username, e).then((response) => {
-      setName(response.data.fullName);
-      // window.location.href = '/home';
+    axiosClient.get("/login/" + auth?.loggedInUser?._id, e).then((response) => {
+      setName(response.data.fullName ? response.data.fullName : response.data.name.fullName);
     });}
   }, []);
-
    return (
    <div style={{}}>
      <BrowserRouter>
@@ -116,6 +114,7 @@ function App() {
                 <Route path='/management/colors' element={<ColorForm />} />
                 {/* SALES */}
 
+                <Route path='/sales/ordersform' element={<OrderForm />} />
                 <Route path='/sales/orders' element={<Orders />} />
                 <Route path='/sales/orders/status' element={<SearchOrdersByStatus />} />
                 <Route path='/upload/form' element={<FormUpload />} />

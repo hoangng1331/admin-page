@@ -1,27 +1,250 @@
-import React from 'react';
-import { Table, Button, Card, Modal, Descriptions, Divider, Form, Space } from 'antd';
-import { axiosClient } from '../../../libraries/axiosClient';
-import numeral from 'numeral';
-
+import React from "react";
+import {
+  Table,
+  Button,
+  Card,
+  Modal,
+  Descriptions,
+  Divider,
+  Form,
+  Space,
+  message,
+  Popconfirm,
+  Select,
+  InputNumber,
+  Input,
+  Checkbox,
+} from "antd";
+import { axiosClient } from "../../../libraries/axiosClient";
+import numeral from "numeral";
+import {
+  DeleteOutlined,
+  EditOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
+import axios from "axios";
+const { Option } = Select;
 export default function Orders() {
-  const [addProductsModalVisible, setAddProductsModalVisible] = React.useState(false);
+  const [addProductsModalVisible, setAddProductsModalVisible] =
+    React.useState(false);
   const [selectedOrder, setSelectedOrder] = React.useState(null);
-  const [orderItems, setOrderItems] = React.useState([]);
+  const [selectedOrderView, setSelectedOrderView] = React.useState(null);
+  const [delectedOrder, setDelectedOrder] = React.useState(null);
   const [selectedRecord, setSelectedRecord] = React.useState(null);
   const [editFormVisible, setEditFormVisible] = React.useState(false);
   const [totalQuantity, setTotalQuantity] = React.useState();
+  const [employeeName, setEmployeeName] = React.useState();
   const [totalValue, setTotalValue] = React.useState();
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
+  const [selectedProduct, setSelectedProduct] = React.useState(null);
+  const [selectedColor, setSelectedColor] = React.useState(null);
+  const [selectedSize, setSelectedSize] = React.useState(null);
+  const [appeared, setAppeared] = React.useState(0);
+  const [quantity, setQuantity] = React.useState(1);
+  const [newQuantity, setNewQuantity] = React.useState(0);
+  const [index2, setIndex2] = React.useState(0);
+  const [maxQuantity, setMaxQuantity] = React.useState(0);
+  const [sizeID, setSizeID] = React.useState([]);
+  const [refresh, setRefresh] = React.useState(0);
+  const [orderDetail, setOrderDetail] = React.useState([]);
+  const [orders, setOrders] = React.useState([]);
+  const [employees, setEmployees] = React.useState([]);
   // Products
   const [products, setProducts] = React.useState([]);
-  React.useEffect(() => {
-    axiosClient.get('/products').then((response) => {
-      setProducts(response.data);
-    });
-  }, []);
-
   const productColumns = [
+    {
+      title: "Sản phẩm",
+      dataIndex: "productId",
+      key: "productId",
+      align: "left",
+      width: "20%",
+      render: (text, record) => {
+        const product = products.find((p) => p._id === text);
+        return product ? product.name : "";
+      },
+    },
+    {
+      title: "Màu sắc",
+      dataIndex: "colorId",
+      key: "colorId",
+      width: "15%",
+      align: "center",
+      render: (text, record, index) => {
+        const product = products.find(
+          (product) => product._id === record.productId
+        );
+        const color = product?.color.find((color) => color._id === text);
+        const hexcode = product?.color.find(
+          (color) => color._id === record.colorId
+        )?.hexcode[0].hex;
+        return (
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span
+              style={{
+                backgroundColor: hexcode,
+                display: "inline-block",
+                width: "20px",
+                height: "20px",
+              }}
+            ></span>
+            <span style={{ marginLeft: "8px" }}>{color?.name || ""}</span>
+          </div>
+        );
+      },
+    },
+    {
+      title: "Kích cỡ",
+      dataIndex: "sizeId",
+      key: "sizeId",
+      width: "12%",
+      align: "center",
+      render: (text, record, index) => {
+        const product = products.find(
+          (product) => product._id === record.productId
+        );
+        const variant = product?.variants.findIndex(
+          (variant) => variant.colorId === record.colorId
+        );
+        const size = product.size[variant]?.find((s) => s._id === text)?.size;
+        return size || "";
+      },
+    },
+    {
+      title: "Số lượng",
+      dataIndex: "quantity",
+      key: "quantity",
+      width: "10%",
+      align: "right",
+      render: (text, record, index) => {
+        const product = products.find(
+          (product) => product._id === record.productId
+        );
+        const variant = product?.variants.find(
+          (variant) => variant.colorId === record.colorId
+        );
+        for (let i = 0; i < variant.sizes.length; i++) {
+          if (variant.sizes[i].sizeId === record.sizeId) {
+            setMaxQuantity(variant.sizes[i].quantity);
+          }
+        }
+        return (
+          <Form.Item>
+            <InputNumber
+              type = "number"
+              min={1}
+              max={maxQuantity + record.quantity}
+              defaultValue={parseInt(text)}
+              onChange={(value) =>{
+                const quantityDiff = value - record.quantity;
+                console.log("diff",quantityDiff)
+                // Update the quantity in the order
+                axios.patch(`http://localhost:5000/orders/${selectedOrder._id}/orderDetails/${record._id}`, {
+                  quantity: value,
+                })
+                .then((response) => {
+                  console.log(response.data);
+                })
+                .catch((error) => {
+                  console.log(error);
+                });
+            
+                // Update the quantity in the product variant
+                if (quantityDiff < 0) {
+                  // Subtract the difference from the size quantity
+                  axios.patch(`http://localhost:5000/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`, {
+                    quantity: maxQuantity + quantityDiff,
+                  })
+                  .then((response) => {
+                    console.log(response.data);
+                  })
+                  .catch((error) => {
+                    console.log(error);
+                  });
+                } else if (quantityDiff > 0) {
+                  if (maxQuantity - quantityDiff<0){
+                    message.error("Tồn kho không đủ")
+                  } else {
+                  // Add the difference to the size quantity
+                  axios.patch(`http://localhost:5000/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`, {
+                    quantity: maxQuantity - quantityDiff,
+                  })
+                  .then((response) => {
+                    console.log(response.data);
+                  })
+                  .catch((error) => {
+                    console.log(error);
+                  });
+                }
+              }
+              }}
+            />
+          </Form.Item>
+        );
+      },
+    },
+    {
+      title: "Giá",
+      dataIndex: "price",
+      key: "price",
+      align: "right",
+      render: (text, record) => {
+        return <p>{numeral(text).format("0,0$")}</p>;
+      },
+    },
+    {
+      title: "Giảm giá",
+      dataIndex: "discount",
+      key: "discount",
+      align: "center",
+    },
+    {
+      title: "Tổng giá",
+      dataIndex: "totalPrice",
+      width: "15%",
+      align: "right",
+      key: "totalPrice",
+      render: (text, record) => {
+        return <strong>{numeral(text).format("0,0$")}</strong>;
+      },
+    },
+    {
+      width: "5%",
+      key: "action",
+      render: (_, record, index) => {
+        return (
+          <Button
+            onClick={async () => {
+              const remainQuantity = await axiosClient.get(
+                `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`
+              );
+              axiosClient.patch(
+                `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`,
+                {
+                  quantity: remainQuantity.data.quantity + record.quantity,
+                }
+              );
+              setRefresh((f) => f + 1);
+              await axiosClient
+                .delete(
+                  `/orders/${selectedOrder._id}/orderDetails/${record._id}`
+                )
+                .then((response) => {
+                  message.success("Cập nhật thành công!");
+                  setRefresh((f) => f + 1);
+                });
+
+              setAddProductsModalVisible(false);
+            }}
+            icon={<DeleteOutlined />}
+          />
+        );
+      },
+    },
+  ];
+  const productColumnsView = [
     {
       title: "Sản phẩm",
       dataIndex: "productId",
@@ -40,14 +263,26 @@ export default function Orders() {
       width: "auto",
       align: "center",
       render: (text, record, index) => {
-        for (let a = 0; a < products.length; a++) {
-          if (products[a]._id === record.productId) {
-        const color = products[a].color.find((color) => color._id === text);
-        return color ? color.name : "";        
-      
-    
-  }
-}
+        const product = products.find(
+          (product) => product._id === record.productId
+        );
+        const color = product?.color.find((color) => color._id === text);
+        const hexcode = product?.color.find(
+          (color) => color._id === record.colorId
+        )?.hexcode[0].hex;
+        return (
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <span
+              style={{
+                backgroundColor: hexcode,
+                display: "inline-block",
+                width: "20px",
+                height: "20px",
+              }}
+            ></span>
+            <span style={{ marginLeft: "8px" }}>{color?.name || ""}</span>
+          </div>
+        );
       },
     },
     {
@@ -57,18 +292,14 @@ export default function Orders() {
       width: "auto",
       align: "center",
       render: (text, record, index) => {
-        for (let a = 0; a < products.length; a++) {
-          if (products[a]._id === record.productId) {
-            for (let i = 0; i < products[a].variants.length; i++) {
-              if (products[a].variants[i].colorId === record.colorId) {
-                const size = products[a].size[i].find((s) => s._id === text);
-                if (size) {
-                  return size.size;
-                }
-              }
-            }
-          }
-        }
+        const product = products.find(
+          (product) => product._id === record.productId
+        );
+        const variant = product?.variants.findIndex(
+          (variant) => variant.colorId === record.colorId
+        );
+        const size = product.size[variant]?.find((s) => s._id === text)?.size;
+        return size || "";
       },
     },
     {
@@ -83,6 +314,9 @@ export default function Orders() {
       dataIndex: "price",
       key: "price",
       align: "right",
+      render: (text, record) => {
+        return <p>{numeral(text).format("0,0$")}</p>;
+      },
     },
     {
       title: "Giảm giá",
@@ -95,196 +329,728 @@ export default function Orders() {
       dataIndex: "totalPrice",
       align: "right",
       key: "totalPrice",
-    },
-    {
-      title: "Hành động",
-      key: "action",
-      render: (_, record, index) => {
-                 return (
-            <Space>
-              <Button
-                onClick={() => {
-                  setSelectedRecord(record);
-                  console.log("Selected Record", record);
-                  updateForm.setFieldsValue(record);
-                  setEditFormVisible(true);
-                }}
-              >
-                Chỉnh sửa
-              </Button>
-              <Button
-                onClick={async () => {
-              const currentProduct = record;
-              console.log('currentProduct', currentProduct);
-              const response = await axiosClient.get('orders/' + selectedOrder._id);
-              const currentOrder = response.data;
-              const { orderDetails } = currentOrder;
-              const remainOrderDetails = orderDetails.filter((x) => {
-                return x.productId.toString() !== currentProduct.productId.toString();
-              });
-              console.log('remainOrderDetails', remainOrderDetails);
-              await axiosClient.patch('orders/' + selectedOrder._id, {
-                orderDetails: remainOrderDetails,
-              });
-
-              setAddProductsModalVisible(false);
-            }}
-              >
-                Xóa
-              </Button>
-            </Space>
-          );
-        }
+      render: (text, record) => {
+        return <strong>{numeral(text).format("0,0$")}</strong>;
       },
+    },
   ];
-
   // Orders
   const columns = [
     {
-      title: 'Khách hàng',
-      dataIndex: 'customer',
-      key: 'customer',
-      render: (text, record) => {
-        return <strong>{record.customer?.fullName}</strong>;
-      },
-    },
-    {
-      title: 'Hình thức thanh toán',
-      dataIndex: 'paymentType',
-      key: 'paymentType',
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-    },
-
-    {
-      title: 'Nhân viên',
-      dataIndex: 'employee',
-      key: 'employee',
-      render: (text, record) => {
-        return <strong>{record.employee?.fullName}</strong>;
-      },
-    },
-    {
-      title: 'Tổng tiền',
-      dataIndex: 'total',
-      key: 'total',
-      render: (text, record) => {
-        const { orderDetails } = record;
-
-        let total = 0;
-        orderDetails.forEach((od) => {
-          let sum = od.quantity * od.product.total;
-          total = total + sum;
-        });
-
-        return <strong>{numeral(total).format('0,0$')}</strong>;
-      },
-    },
-    {
-      title: '',
-      key: 'actions',
+      title: "Tên khách hàng",
+      dataIndex: "customer",
+      key: "customer",
       render: (text, record) => {
         return (
-          <Button
-            onClick={() => {
-              console.log('record', record);
-              setSelectedOrder(record);
-            }}
-          >
-            Select
-          </Button>
+          <strong>
+            {record.customer ? record.customer.fullName : record.customerName}
+          </strong>
+        );
+      },
+    },
+    {
+      title: "Số điện thoại",
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
+      align: "center",
+    },
+    {
+      title: "Hình thức thanh toán",
+      dataIndex: "paymentType",
+      align: "center",
+      key: "paymentType",
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "status",
+      align: "center",
+      key: "status",
+    },
+    {
+      title: "Khách hàng",
+      dataIndex: "customerId",
+      align: "center",
+      key: "customerId",
+      render: (text, record) => {
+        return <p>{record.customerId ? "Thành viên" : "Vãng lai"}</p>;
+      },
+    },
+    {
+      title: "Người tạo đơn",
+      dataIndex: "employee",
+      align: "center",
+      key: "employee",
+      render: (text, record) => {
+        axiosClient
+          .get("/employees/" + record?.employeeLogin?.employeeId)
+          .then((response) => {
+            setEmployeeName(response.data.fullName);
+          });
+        return (
+          <strong>
+            {record?.employeeLogin?.fullName
+              ? record.employeeLogin.fullName
+              : employeeName}
+          </strong>
+        );
+      },
+    },
+    {
+      title: "Tổng tiền",
+      dataIndex: "totalProductValue",
+      align: "right",
+      key: "totalProductValue",
+      render: (text, record) => {
+        return (
+          <strong>{numeral(text + record.shippingFee).format("0,0$")}</strong>
+        );
+      },
+    },
+    {
+      title: "",
+      key: "actions",
+      render: (text, record) => {
+        const isDisabled =
+          record.status === "CONFIRMED" ||
+          record.status === "SHIPPING" ||
+          record.status === "CANCELED" ||
+          record.status === "COMPLETED";
+        const isChanged =
+          record.status === "CONFIRMED" || record.status === "SHIPPING";
+        return (
+          <Space>
+            {isDisabled ? (
+              <Button
+                onClick={() => {
+                  setSelectedOrderView(record);
+                  setRefresh((f) => f + 1);
+                }}
+                icon={<EyeOutlined />}
+              />
+            ) : (
+              <Button
+                onClick={() => {
+                  setSelectedOrder(record);
+                  setRefresh((f) => f + 1);
+                }}
+                icon={<EditOutlined />}
+                disabled={isDisabled}
+              />
+            )}
+            <Button
+              type="primary"
+              ghost
+              onClick={async (values) => {
+                if (record.shippingFee === 0 && !record.shipperId) {
+                  message.error(
+                    "Hãy chọn shipper trước khi xác nhận đơn hàng!"
+                  );
+                } else {
+                  await axiosClient
+                    .patch("/orders/" + record._id, { status: "CONFIRMED" })
+                    .then((response) => {
+                      message.success("Đơn hàng đã được xác nhận!");
+                      setRefresh((f) => f + 1);
+                    });
+                }
+              }}
+              icon={<CheckOutlined />}
+              disabled={isDisabled}
+            />
+            {isChanged ? (
+              <Popconfirm
+                style={{ width: 800 }}
+                title="Are you sure to cancel?"
+                onConfirm={() => {
+                  setDelectedOrder(record);
+                  // Cancel
+                  const id = record._id;
+                  axiosClient
+                    .patch("/orders/" + id, { status: "CANCELED" })
+                    .then((response) => {
+                      message.success("Đơn hàng đã bị hủy!");
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      message.error("Hủy bị lỗi!");
+                    });
+                  console.log("DELETE", record);
+                }}
+                onCancel={() => {}}
+                okText="Đồng ý"
+                cancelText="Đóng"
+              >
+                <Button
+                  danger
+                  type="dashed"
+                  onClick={() => {
+                    setDelectedOrder(record);
+                    setRefresh((f) => f + 1);
+                  }}
+                  icon={<CloseOutlined />}
+                />
+              </Popconfirm>
+            ) : (
+              <Popconfirm
+                disabled={isDisabled}
+                style={{ width: 800 }}
+                title="Are you sure to delete?"
+                onConfirm={() => {
+                  setDelectedOrder(record);
+                  // DELETE
+                  const id = record._id;
+                  delectedOrder.orderDetails.forEach(async (orderDetail) => {
+                    const remainQuantity = await axiosClient.get(
+                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`
+                    );
+                    axiosClient.patch(
+                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`,
+                      {
+                        quantity:
+                          remainQuantity.data.quantity + orderDetail.quantity,
+                      }
+                    );
+                    setRefresh((f) => f + 1);
+                  });
+                  axiosClient
+                    .delete("/orders/" + id)
+                    .then((response) => {
+                      message.success("Xóa thành công!");
+                      setRefresh((f) => f + 1);
+                    })
+                    .catch((err) => {
+                      message.error("Xóa bị lỗi!");
+                    });
+                  console.log("DELETE", record);
+                }}
+                onCancel={() => {}}
+                okText="Đồng ý"
+                cancelText="Đóng"
+              >
+                <Button
+                  danger
+                  type="dashed"
+                  onClick={() => {
+                    setDelectedOrder(record);
+                    setRefresh((f) => f + 1);
+                  }}
+                  icon={<DeleteOutlined />}
+                  disabled={isDisabled}
+                />
+              </Popconfirm>
+            )}
+          </Space>
         );
       },
     },
   ];
-
-  const [orders, setOrders] = React.useState([]);
   React.useEffect(() => {
-    axiosClient.get('/orders').then((response) => {
+    axiosClient.get("/orders").then((response) => {
       setOrders(response.data);
     });
-  }, []);
+    axiosClient
+      .get(`/orders/${selectedOrder?._id}/orderDetails`)
+      .then((response) => {
+        setOrderDetail(response.data);
+      });
+    axiosClient
+      .get(`/orders/${selectedOrderView?._id}/orderDetails`)
+      .then((response) => {
+        setOrderDetail(response.data);
+      });
+    axiosClient.get("/products").then((response) => {
+      setProducts(response.data);
+    });
+    async function fetchEmployees() {
+      try {
+        const response = await axiosClient.get("/employees");
+        const filteredEmployees = response.data.filter(
+          (employee) => employee.role === "Giao hàng"
+        );
+        setEmployees(filteredEmployees);
+      } catch (error) {
+        console.log(error);
+      }
+    }
 
+    fetchEmployees();
+  }, [refresh]);
+  const updateQuantity = (value) => {};
+  const handleProductChange = (productId) => {
+    const product = products.find((p) => p._id === productId);
+    // Kiểm tra số lượng sản phẩm có sẵn
+    if (product.stock === 0) {
+      message.error("Sản phẩm " + product.name + " đã hết hàng");
+      // Reset
+      setSelectedProduct(null);
+      return;
+    } else {
+      setSelectedProduct(product);
+      setSelectedColor(null);
+      setSelectedSize(null);
+      setQuantity(1);
+    }
+  };
+  const handleColorChange = (colorId, record) => {
+    const color = selectedProduct.variants.find((v) => v.colorId === colorId);
+    if (selectedProduct.stockByColor[colorId] === 0) {
+      message.error(
+        "Màu " +
+          record.children[0] +
+          " của " +
+          selectedProduct.name +
+          " đã hết hàng"
+      );
+      // Reset
+      setSelectedColor(null);
+      return null;
+    } else {
+      selectedProduct.variants.find((v, index) => {
+        if (v.colorId === colorId) {
+          setIndex2(index);
+        }
+      });
+      setSizeID(color.sizes.map((i) => i.sizeId));
+      setSelectedColor(color);
+      setSelectedSize(null);
+      setQuantity(1);
+    }
+  };
+  const handleSizeChange = (sizeId, record) => {
+    const size = selectedColor.sizes.find((s) => s.sizeId === sizeId);
+    if (record.children[2] === 0) {
+      message.error(
+        "Màu " +
+          selectedProduct.color[index2].name +
+          " cỡ " +
+          record.children[0] +
+          " của " +
+          selectedProduct.name +
+          " đã hết hàng"
+      );
+      // Reset
+      setSelectedSize(null);
+      return;
+    }
+    setSelectedSize(size);
+    setQuantity(1);
+  };
+  const handleFormSubmit = async (values) => {
+    const existingOrderItem = selectedOrder.orderDetails.find(
+      (item) =>
+        item.productId === selectedProduct._id &&
+        item.colorId === selectedColor.colorId &&
+        item.sizeId === selectedSize.sizeId
+    );
+    if (existingOrderItem) {
+      message.warning("Sản phẩm đã có trong đơn hàng");
+      setAppeared(0);
+      return;
+    } else {
+      axiosClient
+        .post("/orders/" + selectedOrder._id + "/orderDetails/", {
+          productId: selectedProduct._id,
+          colorId: selectedColor.colorId,
+          sizeId: selectedSize.sizeId,
+          quantity: quantity,
+          price: selectedColor.price,
+          discount: selectedColor.discount,
+          totalPrice:
+            (selectedColor.price -
+              (selectedColor.price * selectedColor.discount) / 100) *
+            quantity,
+        })
+        .then(async (response) => {
+          const remainQuantity = await axiosClient.get(
+            "/products/" +
+              values.productId +
+              "/variants/" +
+              values.colorId +
+              "/sizes/" +
+              values.sizeId
+          );
+          axiosClient
+            .patch(
+              "/products/" +
+                values.productId +
+                "/variants/" +
+                values.colorId +
+                "/sizes/" +
+                values.sizeId,
+              { quantity: remainQuantity.data.quantity - values.quantity }
+            )
+            .then((response) => {
+              setRefresh((f) => f + 1);
+              message.success("Thêm mới thành công!");
+              setSelectedProduct(null);
+              setSelectedColor(null);
+              setSelectedSize(null);
+              setQuantity(1);
+              createForm.resetFields();
+              setAddProductsModalVisible(false);
+            });
+        })
+        .catch((err) => {
+          message.error("Thêm mới bị lỗi!");
+        });
+    }
+  };
+  const onChangeShipper = async (value) => {
+    await axiosClient
+      .patch("/orders/" + selectedOrder._id, { shipperId: value })
+      .then((response) => {
+        message.success("Đã thêm nhân viên giao hàng");
+        setRefresh((f) => f + 1);
+      });
+  };
+  const paymentStatus = async (value) => {
+    await axiosClient
+      .patch("/orders/" + selectedOrder._id, {
+        paymentStatus: value.target.checked
+          ? value.target.name
+          : "Chưa thanh toán",
+      })
+      .then((response) => {
+        message.success("Đã cập nhật trạng thái thanh toán");
+        setRefresh((f) => f + 1);
+      });
+  };
   return (
     <div>
       <Modal
         centered
-        width={'90%'}
-        title='Chi tiết đơn hàng'
+        width={"90%"}
+        title="Chi tiết đơn hàng"
         open={selectedOrder}
+        onOk={() => setSelectedOrder(null)}
         onCancel={() => {
           setSelectedOrder(null);
         }}
       >
         {selectedOrder && (
           <div>
-            <Descriptions bordered column={1} labelStyle={{ fontWeight: '700' }}>
-              <Descriptions.Item label='Trạng thái'>{selectedOrder.status}</Descriptions.Item>
-              <Descriptions.Item label='Khách hàng'>{selectedOrder.customer?.fullName}</Descriptions.Item>
-              <Descriptions.Item label='Nhân viên'>{selectedOrder.employee?.fullName}</Descriptions.Item>
+            <Descriptions
+              bordered
+              column={2}
+              labelStyle={{ fontWeight: "700" }}
+            >
+              <Descriptions.Item label="Trạng thái">
+                {selectedOrder.status}
+              </Descriptions.Item>
+              <Descriptions.Item label="Khách hàng">
+                {selectedOrder.customer
+                  ? selectedOrder.customer.fullName
+                  : selectedOrder.customerName}
+              </Descriptions.Item>
+              <Descriptions.Item label="Địa chỉ giao hàng">
+                {selectedOrder?.address}
+              </Descriptions.Item>
+              <Descriptions.Item label="Khu vực giao hàng">
+                {selectedOrder.deliveryArea}
+              </Descriptions.Item>
+              {selectedOrder?.shippingFee === 0 ? (
+                <Descriptions.Item label="Chọn nhân viên giao hàng">
+                  <Form.Item name="shipperId">
+                    <Select
+                      onChange={onChangeShipper}
+                      defaultValue={
+                        selectedOrder.shipperId ? selectedOrder.shipperId : null
+                      }
+                      showSearch
+                      optionFilterProp="children"
+                    >
+                      {employees.map((employee) => (
+                        <Select.Option key={employee._id} value={employee._id}>
+                          {employee.fullName} - {employee.deliveryArea}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Descriptions.Item>
+              ) : (
+                <Descriptions.Item label="Phí vận chuyển">
+                  {numeral(selectedOrder.shippingFee).format("0,0$")}
+                </Descriptions.Item>
+              )}
+              <Descriptions.Item label="Trạng thái thanh toán">
+                <Form.Item name="paymentStatus">
+                  <Checkbox
+                    defaultChecked={
+                      selectedOrder.paymentStatus === "Đã thanh toán"
+                        ? true
+                        : false
+                    }
+                    onChange={paymentStatus}
+                    name="Đã thanh toán"
+                  >
+                    Đã thanh toán
+                  </Checkbox>
+                </Form.Item>
+              </Descriptions.Item>
+              {selectedOrder.note ? (
+                <Descriptions.Item label="Ghi chú">
+                  {selectedOrder.note}
+                </Descriptions.Item>
+              ) : (
+                <></>
+              )}
             </Descriptions>
             <Divider />
-            <Table rowKey='_id' dataSource={selectedOrder.orderDetails} columns={productColumns} />
-
-            <Button
-              onClick={() => {
-                setAddProductsModalVisible(true);
+            <Table
+              rowKey="_id"
+              dataSource={orderDetail}
+              columns={productColumns}
+              scroll={{
+                y: 300,
               }}
-            >
-              Thêm sản phẩm
-            </Button>
+              summary={(pageData) => {
+                let totalQuantity = 0;
+                let totalValue = 0;
+                pageData.forEach(({ quantity, totalPrice }) => {
+                  totalQuantity += quantity;
+                  totalValue += totalPrice;
+                });
+                return (
+                  <Table.Summary fixed>
+                    <Table.Summary.Row align="right">
+                      <Table.Summary.Cell index={0}></Table.Summary.Cell>
+                      <Table.Summary.Cell index={1}></Table.Summary.Cell>
+                      <Table.Summary.Cell index={2}>
+                        <strong>Tổng sản phẩm:</strong>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={3}>
+                        <strong>{totalQuantity}</strong>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={4}></Table.Summary.Cell>
+                      <Table.Summary.Cell index={5}>
+                        <strong>Tổng giá trị:</strong>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={6}>
+                        <strong>{numeral(totalValue).format("0,0$")}</strong>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={7}></Table.Summary.Cell>
+                    </Table.Summary.Row>
+                  </Table.Summary>
+                );
+              }}
+              pagination={false}
+            />
+            <div style={{ marginTop: "10px" }}>
+              <Button
+                onClick={() => {
+                  setAddProductsModalVisible(true);
+                }}
+              >
+                Thêm sản phẩm
+              </Button>
+            </div>
 
             <Modal
               centered
-              width={'80%'}
-              title='Danh sách sản phẩm'
+              width={"80%"}
+              title="Danh sách sản phẩm"
               open={addProductsModalVisible}
+              onOk={() => {
+                createForm.submit();
+              }}
               onCancel={() => {
                 setAddProductsModalVisible(false);
               }}
             >
-              {products &&
-                products.map((p) => {
-                  return (
-                    <Card key={p._id}>
-                      <strong>{p.name}</strong>
-                      <Button
-                        onClick={async () => {
-                          const response = await axiosClient.get('orders/' + selectedOrder._id);
-                          const currentOrder = response.data;
-                          const { orderDetails } = currentOrder;
-                          const found = orderDetails.find((x) => x.productId === p._id);
-                          if (found) {
-                            found.quantity++;
-                          } else {
-                            orderDetails.push({
-                              productId: p._id,
-                              quantity: 1,
-                            });
-                          }
-
-                          await axiosClient.patch('orders/' + selectedOrder._id, {
-                            orderDetails,
-                          });
-
-                          setAddProductsModalVisible(false);
-                          // RELOAD //
-                        }}
+              <Form
+                form={createForm}
+                name="create-form"
+                labelCol={{ span: 8 }}
+                wrapperCol={{ span: 16 }}
+                initialValues={{ remember: true }}
+                onFinish={handleFormSubmit}
+                autoComplete="on"
+              >
+                <Form.Item label="Sản phẩm" name="productId">
+                  <Select
+                    value={selectedProduct ? selectedProduct._id : undefined}
+                    onChange={handleProductChange}
+                    showSearch
+                    optionFilterProp="children"
+                  >
+                    {products.map((product) => (
+                      <Option key={product._id} value={product._id}>
+                        {product.name} - Tồn kho: {product.stock}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                {selectedProduct && (
+                  <>
+                    <Form.Item label="Màu sắc" name="colorId">
+                      <Select
+                        value={
+                          selectedColor ? selectedColor.colorId : undefined
+                        }
+                        onChange={handleColorChange}
+                        showSearch
+                        optionFilterProp="children"
                       >
-                        Add
-                      </Button>
-                    </Card>
-                  );
-                })}
+                        {selectedProduct.variants.map((variant, index) => (
+                          <Option key={variant.colorId} value={variant.colorId}>
+                            <span
+                              style={{
+                                backgroundColor:
+                                  selectedProduct.color[index].hexcode[0].hex,
+                                display: "inline-block",
+                                width: "10px",
+                                height: "10px",
+                                marginRight: "3px",
+                              }}
+                            />
+                            {selectedProduct.color[index].name} - Tồn kho:{" "}
+                            {selectedProduct.stockByColor[variant.colorId]}
+                          </Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+                    {selectedColor && (
+                      <>
+                        <Form.Item label="Kích cỡ" name="sizeId">
+                          <Select
+                            value={
+                              selectedSize ? selectedSize.sizeId : undefined
+                            }
+                            onChange={handleSizeChange}
+                          >
+                            {selectedProduct?.size[index2].map(
+                              (size, index) => {
+                                return (
+                                  <Option key={size._id} value={size._id}>
+                                    {size.size} - Tồn kho:{" "}
+                                    {selectedColor?.sizes[index]?.quantity}
+                                  </Option>
+                                );
+                              }
+                            )}
+                          </Select>
+                        </Form.Item>
+                        {selectedSize && (
+                          <>
+                            <Form.Item label="Số lượng" name="quantity">
+                              <InputNumber
+                                type="number"
+                                min={1}
+                                max={selectedSize.quantity}
+                                value={quantity}
+                                onChange={(value) =>
+                                  value && setQuantity(parseInt(value))
+                                }
+                              />
+                            </Form.Item>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
+              </Form>
             </Modal>
           </div>
         )}
       </Modal>
 
-      <Table rowKey='_id' dataSource={orders} columns={columns} />
+      <Table rowKey="_id" dataSource={orders} columns={columns} />
+
+      <Modal
+        centered
+        width={"90%"}
+        title="Chi tiết đơn hàng"
+        open={selectedOrderView}
+        onOk={() => setSelectedOrderView(null)}
+        onCancel={() => {
+          setSelectedOrderView(null);
+        }}
+      >
+        {selectedOrderView && (
+          <div>
+            <Descriptions
+              bordered
+              column={2}
+              labelStyle={{ fontWeight: "700" }}
+            >
+              <Descriptions.Item label="Trạng thái">
+                {selectedOrderView.status}
+              </Descriptions.Item>
+              <Descriptions.Item label="Khách hàng">
+                {selectedOrderView.customer
+                  ? selectedOrderView.customer.fullName
+                  : selectedOrderView.customerName}
+              </Descriptions.Item>
+              <Descriptions.Item label="Địa chỉ giao hàng">
+                {selectedOrderView.address}
+              </Descriptions.Item>
+              <Descriptions.Item label="Khu vực giao hàng">
+                {selectedOrderView.deliveryArea}
+              </Descriptions.Item>
+              {selectedOrderView.shippingFee === 0 ? (
+                <Descriptions.Item label="Nhân viên giao hàng">
+                  {selectedOrderView.shipper.fullName}
+                </Descriptions.Item>
+              ) : (
+                <Descriptions.Item label="Phí vận chuyển">
+                  {numeral(selectedOrderView.shippingFee).format("0,0$")}
+                </Descriptions.Item>
+              )}
+              <Descriptions.Item label="Trạng thái thanh toán">
+                {selectedOrderView.paymentStatus}
+              </Descriptions.Item>
+              {selectedOrderView.note ? (
+                <Descriptions.Item label="Ghi chú">
+                  {selectedOrderView.note}
+                </Descriptions.Item>
+              ) : (
+                <></>
+              )}
+            </Descriptions>
+            <Divider />
+            <Table
+              rowKey="_id"
+              dataSource={orderDetail}
+              columns={productColumnsView}
+              scroll={{
+                y: 300,
+              }}
+              summary={(pageData) => {
+                let totalQuantity = 0;
+                let totalValue = 0;
+                pageData.forEach(({ quantity, totalPrice }) => {
+                  totalQuantity += quantity;
+                  totalValue += totalPrice;
+                });
+                return (
+                  <Table.Summary fixed>
+                    <Table.Summary.Row align="right">
+                      <Table.Summary.Cell index={0}></Table.Summary.Cell>
+                      <Table.Summary.Cell index={1}></Table.Summary.Cell>
+                      <Table.Summary.Cell index={2}>
+                        <strong>Tổng sản phẩm:</strong>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={3}>
+                        <strong>{totalQuantity}</strong>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={4}></Table.Summary.Cell>
+                      <Table.Summary.Cell index={5}>
+                        <strong>Tổng giá trị:</strong>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={6}>
+                        <strong>{numeral(totalValue).format("0,0$")}</strong>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={7}></Table.Summary.Cell>
+                    </Table.Summary.Row>
+                  </Table.Summary>
+                );
+              }}
+              pagination={false}
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
