@@ -32,11 +32,7 @@ export default function Orders() {
   const [selectedOrder, setSelectedOrder] = React.useState(null);
   const [selectedOrderView, setSelectedOrderView] = React.useState(null);
   const [delectedOrder, setDelectedOrder] = React.useState(null);
-  const [selectedRecord, setSelectedRecord] = React.useState(null);
-  const [editFormVisible, setEditFormVisible] = React.useState(false);
-  const [totalQuantity, setTotalQuantity] = React.useState();
   const [employeeName, setEmployeeName] = React.useState();
-  const [totalValue, setTotalValue] = React.useState();
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
   const [selectedProduct, setSelectedProduct] = React.useState(null);
@@ -44,9 +40,9 @@ export default function Orders() {
   const [selectedSize, setSelectedSize] = React.useState(null);
   const [appeared, setAppeared] = React.useState(0);
   const [quantity, setQuantity] = React.useState(1);
-  const [newQuantity, setNewQuantity] = React.useState(0);
-  const [index2, setIndex2] = React.useState(0);
   const [maxQuantity, setMaxQuantity] = React.useState(0);
+  const [index2, setIndex2] = React.useState(0);
+  const [selectEditRecord, setSelectEditRecord] = React.useState(null);
   const [sizeID, setSizeID] = React.useState([]);
   const [refresh, setRefresh] = React.useState(0);
   const [orderDetail, setOrderDetail] = React.useState([]);
@@ -60,7 +56,7 @@ export default function Orders() {
       dataIndex: "productId",
       key: "productId",
       align: "left",
-      width: "20%",
+      width: "15%",
       render: (text, record) => {
         const product = products.find((p) => p._id === text);
         return product ? product.name : "";
@@ -118,72 +114,6 @@ export default function Orders() {
       key: "quantity",
       width: "10%",
       align: "right",
-      render: (text, record, index) => {
-        const product = products.find(
-          (product) => product._id === record.productId
-        );
-        const variant = product?.variants.find(
-          (variant) => variant.colorId === record.colorId
-        );
-        for (let i = 0; i < variant.sizes.length; i++) {
-          if (variant.sizes[i].sizeId === record.sizeId) {
-            setMaxQuantity(variant.sizes[i].quantity);
-          }
-        }
-        return (
-          <Form.Item>
-            <InputNumber
-              type = "number"
-              min={1}
-              max={maxQuantity + record.quantity}
-              defaultValue={parseInt(text)}
-              onChange={(value) =>{
-                const quantityDiff = value - record.quantity;
-                console.log("diff",quantityDiff)
-                // Update the quantity in the order
-                axios.patch(`http://localhost:5000/orders/${selectedOrder._id}/orderDetails/${record._id}`, {
-                  quantity: value,
-                })
-                .then((response) => {
-                  console.log(response.data);
-                })
-                .catch((error) => {
-                  console.log(error);
-                });
-            
-                // Update the quantity in the product variant
-                if (quantityDiff < 0) {
-                  // Subtract the difference from the size quantity
-                  axios.patch(`http://localhost:5000/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`, {
-                    quantity: maxQuantity + quantityDiff,
-                  })
-                  .then((response) => {
-                    console.log(response.data);
-                  })
-                  .catch((error) => {
-                    console.log(error);
-                  });
-                } else if (quantityDiff > 0) {
-                  if (maxQuantity - quantityDiff<0){
-                    message.error("Tồn kho không đủ")
-                  } else {
-                  // Add the difference to the size quantity
-                  axios.patch(`http://localhost:5000/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`, {
-                    quantity: maxQuantity - quantityDiff,
-                  })
-                  .then((response) => {
-                    console.log(response.data);
-                  })
-                  .catch((error) => {
-                    console.log(error);
-                  });
-                }
-              }
-              }}
-            />
-          </Form.Item>
-        );
-      },
     },
     {
       title: "Giá",
@@ -215,31 +145,49 @@ export default function Orders() {
       key: "action",
       render: (_, record, index) => {
         return (
-          <Button
-            onClick={async () => {
-              const remainQuantity = await axiosClient.get(
-                `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`
-              );
-              axiosClient.patch(
-                `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`,
-                {
-                  quantity: remainQuantity.data.quantity + record.quantity,
-                }
-              );
-              setRefresh((f) => f + 1);
-              await axiosClient
-                .delete(
-                  `/orders/${selectedOrder._id}/orderDetails/${record._id}`
-                )
-                .then((response) => {
-                  message.success("Cập nhật thành công!");
-                  setRefresh((f) => f + 1);
-                });
+          <Space>
+            <Button
+              icon={<EditOutlined />}
+              onClick={async () => {
+                setSelectEditRecord(record);
+                axiosClient
+                  .get(
+                    `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}`
+                  )
+                  .then((response) => {
+                    setMaxQuantity(response.data);
+                    setRefresh((f) => f + 1);
+                  });
+                updateForm.setFieldsValue(record);
+                setRefresh((f) => f + 1);
+              }}
+            />
+            <Button
+              onClick={async () => {
+                const remainQuantity = await axiosClient.get(
+                  `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`
+                );
+                axiosClient.patch(
+                  `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`,
+                  {
+                    quantity: remainQuantity.data.quantity + record.quantity,
+                  }
+                );
+                setRefresh((f) => f + 1);
+                await axiosClient
+                  .delete(
+                    `/orders/${selectedOrder._id}/orderDetails/${record._id}`
+                  )
+                  .then((response) => {
+                    message.success("Cập nhật thành công!");
+                    setRefresh((f) => f + 1);
+                  });
 
-              setAddProductsModalVisible(false);
-            }}
-            icon={<DeleteOutlined />}
-          />
+                setAddProductsModalVisible(false);
+              }}
+              icon={<DeleteOutlined />}
+            />
+          </Space>
         );
       },
     },
@@ -561,6 +509,13 @@ export default function Orders() {
     axiosClient.get("/products").then((response) => {
       setProducts(response.data);
     });
+    axiosClient
+      .get(
+        `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}`
+      )
+      .then((response) => {
+        setMaxQuantity(response.data.quantity);
+      });
     async function fetchEmployees() {
       try {
         const response = await axiosClient.get("/employees");
@@ -575,7 +530,38 @@ export default function Orders() {
 
     fetchEmployees();
   }, [refresh]);
-  const updateQuantity = (value) => {};
+  const updateQuantity = (value) => {
+    const quanDiff = value.quantity - selectEditRecord?.quantity;
+    if (maxQuantity - quanDiff < 0) {
+      message.error("Tồn kho không đủ");
+    } else {
+      axiosClient
+        .patch(
+          `/orders/${selectedOrder._id}/orderDetails/${selectEditRecord?._id}`,
+          {
+            quantity: value.quantity,
+          }
+        )
+        .then((response) => {
+          setRefresh((f) => f + 1);
+          axiosClient
+            .patch(
+              `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}`,
+              {
+                quantity: maxQuantity - quanDiff,
+              }
+            )
+            .then((response) => {
+              setRefresh((f) => f + 1);
+              setSelectEditRecord(null);
+            });
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    }
+    setRefresh((f) => f + 1);
+  };
   const handleProductChange = (productId) => {
     const product = products.find((p) => p._id === productId);
     // Kiểm tra số lượng sản phẩm có sẵn
@@ -655,10 +641,6 @@ export default function Orders() {
           quantity: quantity,
           price: selectedColor.price,
           discount: selectedColor.discount,
-          totalPrice:
-            (selectedColor.price -
-              (selectedColor.price * selectedColor.discount) / 100) *
-            quantity,
         })
         .then(async (response) => {
           const remainQuantity = await axiosClient.get(
@@ -753,17 +735,22 @@ export default function Orders() {
                   <Form.Item name="shipperId">
                     <Select
                       onChange={onChangeShipper}
-                      defaultValue={
-                        selectedOrder.shipperId ? selectedOrder.shipperId : null
-                      }
+                      defaultValue={selectedOrder.shipperId ?? null}
                       showSearch
                       optionFilterProp="children"
                     >
-                      {employees.map((employee) => (
-                        <Select.Option key={employee._id} value={employee._id}>
-                          {employee.fullName} - {employee.deliveryArea}
-                        </Select.Option>
-                      ))}
+                      {employees
+                        .filter(
+                          (employee) => employee.deliveryArea === selectedOrder.deliveryArea
+                        )
+                        .map((employee) => (
+                          <Select.Option
+                            key={employee._id}
+                            value={employee._id}
+                          >
+                            {employee.fullName} - {employee.deliveryArea}
+                          </Select.Option>
+                        ))}
                     </Select>
                   </Form.Item>
                 </Descriptions.Item>
@@ -949,6 +936,40 @@ export default function Orders() {
                     )}
                   </>
                 )}
+              </Form>
+            </Modal>
+            <Modal
+              centered
+              open={selectEditRecord}
+              title="Cập nhật số lượng"
+              onOk={() => {
+                updateForm.submit();
+              }}
+              onCancel={() => {
+                setSelectEditRecord(null);
+              }}
+              okText="Lưu thông tin"
+              cancelText="Đóng"
+            >
+              <Form
+                form={updateForm}
+                name="update-form"
+                labelCol={{ span: 8 }}
+                wrapperCol={{ span: 16 }}
+                initialValues={{ remember: true }}
+                onFinish={updateQuantity}
+                autoComplete="on"
+              >
+                {" "}
+                <Form.Item label="Số lượng" name="quantity">
+                  <InputNumber
+                    type="number"
+                    min={1}
+                    max={maxQuantity + selectEditRecord?.quantity}
+                    value={selectEditRecord?.quantity}
+                    onChange={(value) => value && setQuantity(parseInt(value))}
+                  />
+                </Form.Item>
               </Form>
             </Modal>
           </div>

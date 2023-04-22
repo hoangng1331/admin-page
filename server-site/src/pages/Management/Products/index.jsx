@@ -348,7 +348,7 @@ export default function Products() {
           label="Mô tả sản phẩm"
           name="description"
           hasFeedback
-        ></Form.Item>
+        ><Input.TextArea /></Form.Item>
         <Form.Item label="Hướng dẫn bảo quản" name="preserveGuide" hasFeedback>
           <Input.TextArea />
         </Form.Item>

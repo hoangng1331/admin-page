@@ -299,10 +299,7 @@ const OrderForm = () => {
         quantity: quantity,
         price: selectedColor.price,
         discount: selectedColor.discount,
-        totalPrice:
-          (selectedColor.price -
-            (selectedColor.price * selectedColor.discount) / 100) *
-          quantity,
+        totalPrice: (100-selectedColor.discount)/100*selectedColor.price*quantity,
       };
 
       setRefresh((f) => f + 1);
@@ -322,7 +319,6 @@ const OrderForm = () => {
             email: values.email,
             address: values.address,
             paymentType: values.paymentType,
-            passersby: "Yes",
             note: values.note,
             deliveryArea: values.deliveryArea
               ? values.deliveryArea
@@ -346,6 +342,7 @@ const OrderForm = () => {
             });
           })
           .catch((err) => {
+            console.log(err)
             message.error("Vui lòng kiểm tra lại thông tin!");
           });
 
@@ -417,7 +414,7 @@ const OrderForm = () => {
         </Form.Item>
         <Form.Item
           name="address"
-          label="Địa chỉ"
+          label="Địa chỉ giao hàng"
           rules={[{ required: true, message: "Chưa nhập địa chỉ" }]}
         >
           <Input.TextArea />

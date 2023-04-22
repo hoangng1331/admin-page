@@ -444,19 +444,37 @@ export default function Employees() {
             <Input />
           </Form.Item>
           <Form.Item
-            label="Vị trí công việc"
-            name="role"
-            rules={[{ required: true, message: "Chưa chọn vị trí công việc" }]}
+          label="Vị trí công việc"
+          name="role"
+          rules={[{ required: true, message: "Chưa chọn vị trí công việc" }]}
+          hasFeedback
+        >
+          <Select disabled placeholder="Chọn vị trí công việc" onChange={(value) => setShowDeliveryArea(value === "Giao hàng")}>
+            <Select.Option value="Chăm sóc khách hàng">
+              Chăm sóc khách hàng
+            </Select.Option>
+            <Select.Option value="Giao hàng">Giao hàng</Select.Option>
+            <Select.Option value="Quản lý">Quản lý</Select.Option>
+          </Select>
+        </Form.Item>
+        {showDeliveryArea && (
+          <Form.Item
+            label="Khu vực giao hàng"
+            name="deliveryArea"
+            rules={[{ required: true, message: "Chưa chọn khu vực giao hàng" }]}
             hasFeedback
           >
-            <Select placeholder="Chọn vị trí công việc" disabled>
-              <Select.Option value="Chăm sóc khách hàng">
-                Chăm sóc khách hàng
-              </Select.Option>
-              <Select.Option value="Giao hàngr">Giao hàng</Select.Option>
-              <Select.Option value="Quản lý">Quản lý</Select.Option>
+            <Select placeholder="Chọn khu vực giao hàng">
+              <Select.Option value="Hòa Vang">Hòa Vang</Select.Option>
+              <Select.Option value="Hải Châu">Hải Châu</Select.Option>
+              <Select.Option value="Thanh Khê">Thanh Khê</Select.Option>
+              <Select.Option value="Liên Chiểu">Liên Chiểu</Select.Option>
+              <Select.Option value="Cẩm Lệ">Cẩm Lệ</Select.Option>
+              <Select.Option value="Ngũ Hành Sơn">Ngũ Hành Sơn</Select.Option>
+              <Select.Option value="Sơn Trà">Sơn Trà</Select.Option>
             </Select>
           </Form.Item>
+        )}
           <Form.Item
             label="Tên đăng nhập"
             name="username"
