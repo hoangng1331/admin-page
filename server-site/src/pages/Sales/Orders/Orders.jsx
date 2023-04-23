@@ -24,7 +24,7 @@ import {
   CloseOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import { useAuthStore } from "../../../hooks/useAuthStore";
 const { Option } = Select;
 export default function Orders() {
   const [addProductsModalVisible, setAddProductsModalVisible] =
@@ -48,6 +48,20 @@ export default function Orders() {
   const [orderDetail, setOrderDetail] = React.useState([]);
   const [orders, setOrders] = React.useState([]);
   const [employees, setEmployees] = React.useState([]);
+  const { auth, logout } = useAuthStore((state) => state);
+  const [employeeLoginId, setEmployeeLoginId] = React.useState("");
+  React.useEffect(
+    (e) => {
+      if (auth) {
+        axiosClient
+          .get("/login/" + auth?.loggedInUser?._id)
+          .then((response) => {
+            setEmployeeLoginId(response.data._id);
+          });
+      }
+    },
+    [refresh]
+  );
   // Products
   const [products, setProducts] = React.useState([]);
   const productColumns = [
@@ -395,7 +409,7 @@ export default function Orders() {
                   );
                 } else {
                   await axiosClient
-                    .patch("/orders/" + record._id, { status: "CONFIRMED" })
+                    .patch("/orders/" + record._id, { status: "CONFIRMED", verifyId: employeeLoginId })
                     .then((response) => {
                       message.success("Đơn hàng đã được xác nhận!");
                       setRefresh((f) => f + 1);
@@ -835,7 +849,7 @@ export default function Orders() {
             <Modal
               centered
               width={"80%"}
-              title="Danh sách sản phẩm"
+              title="Thêm sản phẩm vào đơn hàng"
               open={addProductsModalVisible}
               onOk={() => {
                 createForm.submit();
@@ -1028,6 +1042,9 @@ export default function Orders() {
               ) : (
                 <></>
               )}
+              <Descriptions.Item label="Người xác nhận đơn">
+                  {selectedOrderView.verifier.fullName??selectedOrderView.verifier.name.fullName}
+                </Descriptions.Item>
             </Descriptions>
             <Divider />
             <Table

@@ -5,23 +5,13 @@ import { useNavigate } from 'react-router-dom';
 
 const items = [
   { label: 'Trang chủ', key: 'home', icon: <HomeOutlined /> },
-  {
-    label: 'Quản trị dữ liệu',
-    key: 'management',
-    icon: <DatabaseOutlined />,
-    children: [
-      { label: 'Nhân viên', key: 'management-employees', icon:<UserOutlined />},
-      { label: 'Quản lý sản phẩm', key: 'product-management', icon: <SkinOutlined />,
+  {label: 'Quản lý sản phẩm', key: 'product-management', icon: <SkinOutlined />,
         children: [
-          { label: 'Danh mục', key: 'management-categories' },
-          { label: 'Sản phẩm', key: 'management-products' },
-          { label: 'Màu sản phẩm', key: 'management-colors',},
+          { label: 'Danh sách sản phẩm', key: 'management-products_list' },
           { label: 'Kho', key: 'management-storage'},
           { label: 'Hàng giảm giá', key: 'management-discount' },
         ],
       },
-    ],
-  },
   {
     label: 'Quản lý bán hàng',
     key: 'sales',
@@ -81,7 +71,7 @@ function renderMenuItems(items) {
   });
 }
 
-export default function MainMenu() {
+export default function ManagerMenu() {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 

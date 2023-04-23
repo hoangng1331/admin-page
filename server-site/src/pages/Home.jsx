@@ -49,7 +49,7 @@ export default function Home () {
         axios.get('http://localhost:5000/categories').then((response)=>
         setProducts(response.data));
     }, [refresh]);
-    const onFinish = (values: any) => {
+    const onFinish = (values) => {
       console.log('Success:', values);
       axios.post('http://localhost:5000/categories', values).then((response)=>{
         
@@ -69,7 +69,7 @@ export default function Home () {
     };
     const [createForm] = Form.useForm();
     const [updateForm] = Form.useForm();
-    const onFinishFailed = (errorInfo: any) => {
+    const onFinishFailed = (errorInfo) => {
       console.log('Failed:', errorInfo);
     };
     const changeData =(data)=>{

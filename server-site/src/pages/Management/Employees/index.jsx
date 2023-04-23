@@ -18,6 +18,7 @@ import moment from "moment";
 
 export default function Employees() {
   const [employees, setEmployees] = React.useState([]);
+  const [employeeRole, setEmployeeRole] = React.useState([]);
   const [selectedRecord, setSelectedRecord] = React.useState(null);
   const [refresh, setRefresh] = React.useState(0);
   const [editFormVisible, setEditFormVisible] = React.useState(false);
@@ -156,6 +157,8 @@ export default function Employees() {
               icon={<EditOutlined />}
               onClick={() => {
                 setIdSelect(index + 1);
+                setRefresh((f) => f + 1)
+                setEmployeeRole(record.role);
                 const id = record._id;
                 axiosClient.get("/login/").then((response) => {
                   setAccountLogin(response.data.map((item) => item._id));
@@ -457,7 +460,7 @@ export default function Employees() {
             <Select.Option value="Quản lý">Quản lý</Select.Option>
           </Select>
         </Form.Item>
-        {showDeliveryArea && (
+        {employeeRole === "Giao hàng" && (
           <Form.Item
             label="Khu vực giao hàng"
             name="deliveryArea"

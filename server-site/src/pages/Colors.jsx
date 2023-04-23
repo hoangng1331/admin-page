@@ -14,10 +14,11 @@ export default function ColorForm () {
   const columns = [
     {
       title: 'STT', 
-      width: '1%',
+      width: '10%',
+      algin: 'center',
       render: (text, record, index) => {
         return (
-          <div style = {{textAlign: 'right'}}>
+          <div>
             <span>{index+1}</span>
           </div>
         )
@@ -28,10 +29,13 @@ export default function ColorForm () {
       title: 'Tên màu',
       dataIndex: 'name',
       key: 'name',
+      width: '20%',
+
     },
     {
       title: 'Hexcode',
       dataIndex: 'hex',
+      width: '20%',
       key: 'hex',
       render: (text, record) => (
         <span>
@@ -42,6 +46,8 @@ export default function ColorForm () {
     {
       title: 'Xem trước',
       dataIndex: 'preview',
+      width: '15%',
+      algin: 'center',
       key: 'preview',
       render: (text, record) => (
         <span style={{ backgroundColor: record.hexcode[0].hex, display: 'inline-block', width: '30px', height: '30px' }}></span>
@@ -49,6 +55,7 @@ export default function ColorForm () {
     },
     {
       key: 'action',
+      width: '10%',
       render: (text, record, index)=>{
           return (
             <Button onClick={() => changeData(record)}>Sửa</Button> 

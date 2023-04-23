@@ -48,7 +48,7 @@ import {useAuthStore} from '../hooks/useAuthStore'
           <Select placeholder='Chọn vị trí công việc'>
             <Select.Option value="Admin">Admin</Select.Option>
             <Select.Option value="Chăm sóc khách hàng">Chăm sóc khách hàng</Select.Option>
-            <Select.Option value="Giao hàngr">Giao hàng</Select.Option>  
+            <Select.Option value="Giao hàng">Giao hàng</Select.Option>  
             <Select.Option value="Quản lý">Quản lý</Select.Option>
           </Select>
         </Form.Item>
