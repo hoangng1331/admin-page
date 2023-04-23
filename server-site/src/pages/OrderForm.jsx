@@ -384,7 +384,11 @@ const OrderForm = () => {
         <Form.Item
           name="phoneNumber"
           label="Số điện thoại"
-          rules={[{ required: true, message: "Chưa nhập số điện thoại" }]}
+          rules={[{ required: true, message: 'Hãy nhập số điện thoại!' },
+          {
+            pattern: /^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/,
+            message: 'Số điện thoại không hợp lệ!',
+          }]}
         >
           <Input />
         </Form.Item>
@@ -392,11 +396,8 @@ const OrderForm = () => {
           name="email"
           label="Email"
           rules={[
-            {
-              required: true,
-              type: "email",
-              message: "Vui lòng nhập đúng định dạng email",
-            },
+            { required: true, message: "Chưa nhập Thư điện tử" },
+            { type: "email", message: "Thư điện tử không hợp lệ" },
           ]}
         >
           <Input />

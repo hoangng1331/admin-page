@@ -24,7 +24,7 @@ import ColorForm from './pages/Colors';
 import {useAuthStore} from './hooks/useAuthStore'
 import {axiosClient} from './libraries/axiosClient'
 import OrderForm from './pages/OrderForm';
-
+import Account from './pages/Management/Employees/account';
 numeral.locale('vi');
 
 const { Header, Footer, Sider, Content } = Layout;  
@@ -93,6 +93,7 @@ function App() {
                 <Route path='/upload/form' element={<FormUpload />} />
                 <Route path='/upload/antd' element={<AntUpload />} />
                 <Route path='/upload/manual-antd' element={<ManualAntUpload />} />
+                <Route path='/account' element={<Account />} />
                 {/* NO MATCH ROUTE */}
                 <Route
                   path='*'
@@ -136,6 +137,7 @@ function App() {
                 <Route path='/' element={<Home />} />
                 <Route path='/home' element={<Home />} />
                 <Route path='/management/discount' element={<Discount />} />
+                <Route path='/management/products' element={<Products />} />
                 {/* SALES */}
 
                 <Route path='/sales/orders' element={<Orders />} />
@@ -143,6 +145,7 @@ function App() {
                 <Route path='/sales/orders/status' element={<SearchOrdersByStatus />} />
                 <Route path='/upload/form' element={<FormUpload />} />
                 <Route path='/upload/antd' element={<AntUpload />} />
+                <Route path='/account' element={<Account />} />
                 <Route path='/upload/manual-antd' element={<ManualAntUpload />} />
                 {/* NO MATCH ROUTE */}
                 <Route
@@ -191,6 +194,7 @@ function App() {
                 <Route path='/sales/orders/status' element={<SearchOrdersByStatus />} />
                 <Route path='/upload/form' element={<FormUpload />} />
                 <Route path='/upload/antd' element={<AntUpload />} />
+                <Route path='/account' element={<Account />} />
                 <Route path='/upload/manual-antd' element={<ManualAntUpload />} />
                 {/* NO MATCH ROUTE */}
                 <Route
@@ -233,6 +237,7 @@ function App() {
             <Content style={{ padding: 24 }}>
               <Routes>
                 <Route path='/' element={<Home />} />
+                <Route path='/account' element={<Account />} />
                 <Route path='/sales/orders' element={<Orders />} />
                 {/* NO MATCH ROUTE */}
                 <Route

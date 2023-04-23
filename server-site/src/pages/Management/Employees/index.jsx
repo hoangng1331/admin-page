@@ -261,7 +261,7 @@ export default function Employees() {
         <Form.Item
           label="Họ và tên lót"
           name="lastName"
-          rules={[{ required: true, message: "Chưa nhập Họ" }]}
+          rules={[{ required: true, message: "Chưa nhập họ!" }]}
           hasFeedback
         >
           <Input />
@@ -270,7 +270,7 @@ export default function Employees() {
         <Form.Item
           label="Tên"
           name="firstName"
-          rules={[{ required: true, message: "Chưa nhập Tên" }]}
+          rules={[{ required: true, message: "Chưa nhập tên!" }]}
           hasFeedback
         >
           <Input />
@@ -279,7 +279,11 @@ export default function Employees() {
         <Form.Item
           label="Số điện thoại"
           name="phoneNumber"
-          rules={[{ required: true, message: "Chưa nhập Số điện thoại" }]}
+          rules={[{ required: true, message: 'Hãy nhập số điện thoại!' },
+          {
+            pattern: /^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/,
+            message: 'Số điện thoại không hợp lệ!',
+          }]}
           hasFeedback
         >
           <Input placeholder="Gồm 10 số, bắt đầu bằng 0" />
@@ -310,7 +314,7 @@ export default function Employees() {
           name="birthday"
           rules={[{ required: true, message: "Chưa chọn ngày sinh" }]}
         >
-          <DatePicker />
+          <DatePicker format="DD/MM/YYYY"/>
         </Form.Item>
         <Form.Item
           label="Vị trí công việc"
@@ -398,7 +402,7 @@ export default function Employees() {
           <Form.Item
             label="Họ và tên lót"
             name="lastName"
-            rules={[{ required: true, message: "Chưa nhập Họ" }]}
+            rules={[{ required: true, message: "Chưa nhập họ!" }]}
             hasFeedback
           >
             <Input />
@@ -407,7 +411,7 @@ export default function Employees() {
           <Form.Item
             label="Tên"
             name="firstName"
-            rules={[{ required: true, message: "Chưa nhập Tên" }]}
+            rules={[{ required: true, message: "Chưa nhập tên!" }]}
             hasFeedback
           >
             <Input />
@@ -416,7 +420,11 @@ export default function Employees() {
           <Form.Item
             label="Số điện thoại"
             name="phoneNumber"
-            rules={[{ required: true, message: "Chưa nhập Số điện thoại" }]}
+            rules={[{ required: true, message: 'Hãy nhập số điện thoại!' },
+            {
+              pattern: /^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/,
+              message: 'Số điện thoại không hợp lệ!',
+            }]}
             hasFeedback
           >
             <Input />
@@ -444,7 +452,7 @@ export default function Employees() {
           </Form.Item>
 
           <Form.Item label="Ngày sinh" name="birthday">
-            <Input />
+            <Input/>
           </Form.Item>
           <Form.Item
           label="Vị trí công việc"

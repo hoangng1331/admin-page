@@ -21,7 +21,7 @@ import {
   PlusCircleOutlined,
   PlusOutlined,
 } from "@ant-design/icons";
-
+import {useAuthStore} from '../../../hooks/useAuthStore'
 import { axiosClient } from "../../../libraries/axiosClient";
 import moment from "moment";
 import numeral from "numeral";
@@ -39,6 +39,15 @@ export default function Products() {
   const [colors, setColors] = React.useState([]);
   const [sizes, setSizes] = React.useState([]);
   const [isModalVisible, setIsModalVisible] = React.useState(false);
+  const { auth, logout } = useAuthStore((state) => state);
+  const [useRole, setUseRole] = React.useState("");
+  const [isReadOnly, setIsReadOnly] = React.useState(useRole !== 'Admin');
+  React.useEffect((e) => {
+    if (auth){
+    axiosClient.get("/login/" + auth?.loggedInUser?._id, e).then((response) => {
+      setUseRole(response.data.role);
+    });}
+  }, []);
   const columns = [
     {
       title: "Hình ảnh",
@@ -164,7 +173,10 @@ export default function Products() {
       width: "1%",
       render: (text, record) => {
         return (
-          <Space>
+            <>
+            { useRole === "Admin" | useRole === "Quản lý" ? (
+              <Space>
+            { useRole === "Admin" &&(
             <Popconfirm
               style={{ width: 800 }}
               title="Are you sure to delete?"
@@ -187,7 +199,7 @@ export default function Products() {
               cancelText="Đóng"
             >
               <Button danger type="dashed" icon={<DeleteOutlined />} />
-            </Popconfirm>
+            </Popconfirm>)}
             <Button
               type="dashed"
               icon={<EditOutlined />}
@@ -221,7 +233,9 @@ export default function Products() {
             >
               <Button icon={<UploadOutlined />} />
             </Upload>
-          </Space>
+            </Space>
+            ) : (<></>)}
+          </>    
         );
       },
     },
@@ -307,6 +321,7 @@ export default function Products() {
   const [updateForm] = Form.useForm();
   return (
     <div>
+      {useRole === "Admin" &&(
       <Form
         form={createForm}
         name="create-form"
@@ -559,7 +574,7 @@ export default function Products() {
             Lưu thông tin
           </Button>
         </Form.Item>
-      </Form>
+      </Form>)}
       <Table
         rowKey="_id"
         dataSource={products}
@@ -611,7 +626,7 @@ export default function Products() {
             rules={[{ required: true, message: "Hãy chọn loại sản phẩm!" }]}
             hasFeedback
           >
-            <Select
+            <Select disabled={isReadOnly}
               options={
                 categories &&
                 categories.map((c) => {
@@ -630,14 +645,14 @@ export default function Products() {
             rules={[{ required: true, message: "Hãy nhập tên sản phẩm!" }]}
             hasFeedback
           >
-            <Input />
+            <Input readOnly={isReadOnly}/>
           </Form.Item>
 
           <Form.Item label="Mô tả sản phẩm" name="description" hasFeedback>
-            <Input.TextArea />
+            <Input.TextArea  readOnly={isReadOnly} />
           </Form.Item>
           <Form.Item label="Hướng dẫn bảo quản" name="preserveGuide" hasFeedback>
-          <Input.TextArea />
+          <Input.TextArea  readOnly={isReadOnly}/>
         </Form.Item>
           <Form.List name="variants">
             {(fields, { add, remove }) => (
@@ -650,7 +665,7 @@ export default function Products() {
                       fieldKey={[field.fieldKey, "colorId"]}
                       rules={[{ required: true, message: "Hãy chọn một màu!" }]}
                     >
-                     <Select
+                     <Select disabled={isReadOnly}
                       showSearch
                       value={colors}
                       optionFilterProp="children"
@@ -728,7 +743,7 @@ export default function Products() {
                       ]}
                       fieldKey={[field.fieldKey, "price"]}
                     >
-                      <Input type="number" min={0} style={{ width: 150 }} />
+                      <Input type="number" min={0} style={{ width: 150 }}  readOnly={isReadOnly}/>
                     </Form.Item>
                     <Form.Item
                       label="Discount"
@@ -741,6 +756,7 @@ export default function Products() {
                         min={0}
                         max={100}
                         style={{ width: 100 }}
+                        readOnly={isReadOnly && useRole !== "Quản lý"}
                       />
                     </Form.Item>
                     <Form.Item
@@ -764,7 +780,7 @@ export default function Products() {
                                     },
                                   ]}
                                 >
-                                  <Select
+                                  <Select disabled={isReadOnly}
                                     style={{ width: 150 }}
                                     options={
                                       sizes &&

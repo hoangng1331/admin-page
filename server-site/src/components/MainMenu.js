@@ -16,7 +16,6 @@ const items = [
           { label: 'Danh mục', key: 'management-categories' },
           { label: 'Sản phẩm', key: 'management-products' },
           { label: 'Màu sản phẩm', key: 'management-colors',},
-          { label: 'Kho', key: 'management-storage'},
           { label: 'Hàng giảm giá', key: 'management-discount' },
         ],
       },

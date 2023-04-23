@@ -4,6 +4,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const items = [
+  {label: 'Quản lý sản phẩm', key: 'product-management', icon: <SkinOutlined />,
+        children: [
+          { label: 'Danh sách sản phẩm', key: 'management-products' },
+          { label: 'Hàng giảm giá', key: 'management-discount' },
+        ],
+      },
   {
     label: 'Bán hàng',
     key: 'sales',

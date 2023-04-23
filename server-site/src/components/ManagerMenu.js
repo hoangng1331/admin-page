@@ -7,8 +7,7 @@ const items = [
   { label: 'Trang chủ', key: 'home', icon: <HomeOutlined /> },
   {label: 'Quản lý sản phẩm', key: 'product-management', icon: <SkinOutlined />,
         children: [
-          { label: 'Danh sách sản phẩm', key: 'management-products_list' },
-          { label: 'Kho', key: 'management-storage'},
+          { label: 'Danh sách sản phẩm', key: 'management-products' },
           { label: 'Hàng giảm giá', key: 'management-discount' },
         ],
       },
