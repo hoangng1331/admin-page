@@ -1,21 +1,21 @@
-import { DatabaseOutlined, HomeOutlined, FileTextOutlined, AreaChartOutlined, SettingOutlined, UserOutlined, ShopOutlined, MenuFoldOutlined, SkinOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { SendOutlined, ScheduleOutlined, DeleteOutlined, LoadingOutlined, SettingOutlined, UserOutlined, ShopOutlined, MenuFoldOutlined, SkinOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { Menu, Button } from 'antd';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const items = [
-  { label: 'Đơn chờ lấy hàng', key: 'sales-orders', icon: <HomeOutlined /> },
+  { label: 'Đơn chờ lấy hàng', key: 'sales-confirmedOrders', icon: <LoadingOutlined /> },
   {
     label: 'Đơn đang giao',
-    key: 'shipping',
-    icon: <DatabaseOutlined />,
+    key: 'sales-shippingOrders',
+    icon: <SendOutlined />,
   },
   {
     label: 'Đơn đã hoàn thành',
-    key: 'complete',
-    icon: <ShopOutlined />,
+    key: 'sales-completedOrders',
+    icon: <ScheduleOutlined />,
   },
-  { label: 'Đơn bị hủy', key: 'cancel', icon: <SettingOutlined /> },
+  { label: 'Đơn bị hủy', key: 'sales-canceledOrders', icon: <DeleteOutlined /> },
   { label: 'Cài đặt tài khoản', key: 'account', icon: <SettingOutlined /> }
 ];
 

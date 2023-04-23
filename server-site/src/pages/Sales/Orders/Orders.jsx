@@ -374,12 +374,12 @@ export default function Orders() {
       key: "actions",
       render: (text, record) => {
         const isDisabled =
-          record.status === "CONFIRMED" ||
-          record.status === "SHIPPING" ||
-          record.status === "CANCELED" ||
-          record.status === "COMPLETED";
+          record.status === "Confirmed" ||
+          record.status === "Shipping" ||
+          record.status === "Canceled" ||
+          record.status === "Completed";
         const isChanged =
-          record.status === "CONFIRMED" || record.status === "SHIPPING";
+          record.status === "Confirmed" || record.status === "Shipping";
         return (
           <Space>
             {isDisabled ? (
@@ -405,6 +405,51 @@ export default function Orders() {
                 disabled={isDisabled}
               />
             )}
+            {record.status === "Canceled" ? (
+            <Popconfirm
+            disabled={record.importStatus === "Đã nhập kho"}
+            style={{ width: 800 }}
+            title="Hàng của đơn bị hủy đã được nhập kho?"
+            onConfirm={() => {
+              setDelectedOrder(record);
+              const id = record._id;
+              delectedOrder.orderDetails.forEach(async (orderDetail) => {
+                const remainQuantity = await axiosClient.get(
+                  `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`
+                );
+                axiosClient.patch(
+                  `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`,
+                  {
+                    quantity:
+                      remainQuantity.data.quantity + orderDetail.quantity,
+                  }
+                );
+                setRefresh((f) => f + 1);
+              });
+              axiosClient
+                .patch("/orders/" + id, {importStatus: "Đã nhập kho"})
+                .then((response) => {
+                  message.success("Nhập kho thành công!");
+                  setRefresh((f) => f + 1);
+                })
+                .catch((err) => {
+                  message.error("Lỗi!");
+                });
+            }}
+            onCancel={() => {}}
+            okText="Đồng ý"
+            cancelText="Đóng"
+          >
+            <Button
+              disabled={record.importStatus === "Đã nhập kho"}
+              type="primary"
+              onClick={() => {
+                setDelectedOrder(record);
+                setRefresh((f) => f + 1);
+              }}
+            >Nhập kho</Button>
+          </Popconfirm>):
+            (<>
             <Button
               type="primary"
               ghost
@@ -415,7 +460,7 @@ export default function Orders() {
                   );
                 } else {
                   await axiosClient
-                    .patch("/orders/" + record._id, { status: "CONFIRMED", verifyId: employeeLoginId })
+                    .patch("/orders/" + record._id, { status: "Confirmed", verifyId: employeeLoginId })
                     .then((response) => {
                       message.success("Đơn hàng đã được xác nhận!");
                       setRefresh((f) => f + 1);
@@ -425,7 +470,7 @@ export default function Orders() {
               icon={<CheckOutlined />}
               disabled={isDisabled}
             />
-            {isChanged ? (
+              {isChanged ? (
               <Popconfirm
                 style={{ width: 800 }}
                 title="Are you sure to cancel?"
@@ -434,7 +479,7 @@ export default function Orders() {
                   // Cancel
                   const id = record._id;
                   axiosClient
-                    .patch("/orders/" + id, { status: "CANCELED" })
+                    .patch("/orders/" + id, { status: "Canceled" })
                     .then((response) => {
                       message.success("Đơn hàng đã bị hủy!");
                       setRefresh((f) => f + 1);
@@ -506,7 +551,7 @@ export default function Orders() {
                   disabled={isDisabled}
                 />
               </Popconfirm>
-            )}
+            )} </>)}
           </Space>
         );
       },

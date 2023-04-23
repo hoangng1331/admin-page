@@ -25,6 +25,10 @@ import {useAuthStore} from './hooks/useAuthStore'
 import {axiosClient} from './libraries/axiosClient'
 import OrderForm from './pages/OrderForm';
 import Account from './pages/Management/Employees/account';
+import ConfirmedOrders from './pages/Sales/Ship/Confirmed';
+import ShippingOrders from './pages/Sales/Ship/Shipping';
+import CompletedOrders from './pages/Sales/Ship/Completed'
+import CanceledOrders from './pages/Sales/Ship/Canceled';
 numeral.locale('vi');
 
 const { Header, Footer, Sider, Content } = Layout;  
@@ -238,7 +242,11 @@ function App() {
               <Routes>
                 <Route path='/' element={<Home />} />
                 <Route path='/account' element={<Account />} />
-                <Route path='/sales/orders' element={<Orders />} />
+                <Route path='/sales/confirmedOrders' element={<ConfirmedOrders />} />
+                <Route path='/sales/shippingOrders' element={<ShippingOrders />} />
+                <Route path='/sales/completedOrders' element={<CompletedOrders />} />
+                <Route path='/sales/canceledOrders' element={<CanceledOrders />} />
+
                 {/* NO MATCH ROUTE */}
                 <Route
                   path='*'
