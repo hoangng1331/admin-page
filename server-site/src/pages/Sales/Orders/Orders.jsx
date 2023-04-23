@@ -33,6 +33,7 @@ export default function Orders() {
   const [selectedOrderView, setSelectedOrderView] = React.useState(null);
   const [delectedOrder, setDelectedOrder] = React.useState(null);
   const [employeeName, setEmployeeName] = React.useState();
+  const [verifierName, setVerifierName] = React.useState();
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
   const [selectedProduct, setSelectedProduct] = React.useState(null);
@@ -385,6 +386,11 @@ export default function Orders() {
               <Button
                 onClick={() => {
                   setSelectedOrderView(record);
+                  axiosClient
+          .get("/employees/" + record?.verifier?.employeeId)
+          .then((response) => {
+            setVerifierName(response.data.fullName);
+          });
                   setRefresh((f) => f + 1);
                 }}
                 icon={<EyeOutlined />}
@@ -1043,7 +1049,7 @@ export default function Orders() {
                 <></>
               )}
               <Descriptions.Item label="Người xác nhận đơn">
-                  {selectedOrderView.verifier.fullName??selectedOrderView.verifier.name.fullName}
+                  {selectedOrderView.verifier.fullName??verifierName}
                 </Descriptions.Item>
             </Descriptions>
             <Divider />
