@@ -86,6 +86,7 @@ function App() {
              </Header>
             <Content style={{ padding: 24 }}>
               <Routes>
+                <Route exact path='/' element={<Navigate to='/login' replace/>} />
                 <Route path='/login' element={<Navigate to='/home' replace/>} />
                 <Route path='/home' element={<Home />} />
                 <Route path='/management/categories' element={<Categories/>} />
@@ -109,9 +110,7 @@ function App() {
                 <Route
                   path='*'
                   element={
-                    <main style={{ padding: '1rem' }}>
-                      <p>404 Page not found</p>
-                    </main>
+                    <Navigate to='/home' replace/>
                   }
                 />
               </Routes>

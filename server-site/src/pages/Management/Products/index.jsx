@@ -29,6 +29,7 @@ import numeral from "numeral";
 import { API_URL } from "../../../constants/URLS";
 import ColorForm from "../../Colors";
 import XLSX from 'xlsx';
+import axios from "axios";
 export default function Products() {
   const [isPreview, setIsPreview] = React.useState(false);
   const [categories, setCategories] = React.useState([]);
@@ -42,7 +43,7 @@ export default function Products() {
   const [isModalVisible, setIsModalVisible] = React.useState(false);
   const { auth, logout } = useAuthStore((state) => state);
   const [useRole, setUseRole] = React.useState("");
-  const [exfile, setExFile] = React.useState(null);
+  const [viewCategory, setViewCategory] = React.useState(null);
     React.useEffect((e) => {
     if (auth){
     axiosClient.get("/login/" + auth?.loggedInUser?._id, e).then((response) => {
@@ -271,11 +272,11 @@ export default function Products() {
   }, [refresh]);
 
   React.useEffect(() => {
-    axiosClient.get("/products").then((response) => {
+    axiosClient.post("/products/category",{ categoryId: viewCategory }).then((response) => {
       setProducts(response.data);
       console.log(response.data);
     });
-  }, [refresh]);
+  }, [viewCategory]);
 
   const onFinish = (values) => {
     console.log(values);
@@ -288,7 +289,7 @@ export default function Products() {
         const formData = new FormData();
         formData.append("file", file);
 
-        axiosClient
+        axios
           .post(API_URL + "/upload/products/" + _id, formData)
           .then((respose) => {
             message.success("Thêm mới thành công!");
@@ -587,6 +588,28 @@ export default function Products() {
           </Button>
         </Form.Item>
       </Form>)}
+      <Form.Item
+          label="Danh mục sản phẩm"
+          rules={[{ required: true, message: "Hãy chọn loại sản phẩm!" }]}
+          hasFeedback
+        >
+          <Select onChange={(value)=> {
+            setViewCategory(value)
+          }}
+            options={
+              categories &&
+              categories.map((c) => {
+                return {
+                  value: c._id,
+                  label: c.name,
+                };
+              })
+            }
+          />
+        </Form.Item>
+        <Button onClick={()=> {
+          setViewCategory(null)
+        }}>Xóa lọc</Button>
       <Table
         rowKey="_id"
         dataSource={products}
@@ -863,17 +886,6 @@ export default function Products() {
               </>
             )}
           </Form.List>
-          <Form.Item label="Hình minh họa" name="file">
-            <Upload
-              showUploadList={true}
-              beforeUpload={(file) => {
-                setFile(file);
-                return false;
-              }}
-            >
-              <Button icon={<UploadOutlined />}>Chọn hình ảnh</Button>
-            </Upload>
-          </Form.Item>
         </Form>
       </Modal>
     </div>

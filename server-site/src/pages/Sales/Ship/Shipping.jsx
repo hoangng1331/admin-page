@@ -246,7 +246,7 @@ export default function ShippingOrders() {
               ghost
               onClick={async (values) => {
                   await axiosClient
-                    .patch("/orders/" + record._id, {status: "Completed", shippedDate: new Date()})
+                    .patch("/orders/" + record._id, {status: "Completed", shippedDate: new Date(), paymentStatus: "Đã thanh toán"})
                     .then((response) => {
                       message.success("Xác nhận đã giao thành công!");
                       setRefresh((f) => f + 1);
@@ -263,7 +263,7 @@ export default function ShippingOrders() {
                   // Cancel
                   const id = record._id;
                   axiosClient
-                    .patch("/orders/" + id, { status: "Canceled", importStatus: "Chờ nhập kho" })
+                    .patch("/orders/" + id, { status: "Canceled", importStatus: "Chờ nhập kho", paymentStatus: "Hủy" })
                     .then((response) => {
                       message.success("Đơn hàng đã bị hủy, hãy đem hàng về kho!");
                       setRefresh((f) => f + 1);

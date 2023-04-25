@@ -1,6 +1,6 @@
 import { Button, Input, Form, Table, Modal, Space  } from 'antd';
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { axiosClient } from '../libraries/axiosClient';
 
 export default function Categories() {
@@ -24,13 +24,6 @@ export default function Categories() {
       key: 'number',
     },
     {
-      title: 'Mã',
-      dataIndex: '_id',
-      key: 'id',
-      width: '1%',
-      align: 'center'
-    },
-    {
       title: 'Loại sản phẩm',
       dataIndex: 'name',
       key: 'name',
@@ -41,6 +34,7 @@ export default function Categories() {
       render: (text, record, index)=>{
           return (<Space>
             <Button onClick={() => changeData(record)}>Sửa</Button> 
+            <Button onClick={() => {<Navigate to="/category/product" replace/>}}>Xem</Button>             
             </Space>)
       }
     },  
@@ -89,9 +83,9 @@ export default function Categories() {
     autoComplete="off"
     >
       <Form.Item
-      label="Loại sản phẩm"
+      label="Danh mục"
       name="name"
-      rules={[{ required: true, message: 'Vui lòng nhập tên sản phẩm!' }]}
+      rules={[{ required: true, message: 'Vui lòng nhập tên danh mục sản phẩm!' }]}
     >
       <Input />
     </Form.Item>

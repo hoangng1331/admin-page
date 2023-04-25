@@ -302,6 +302,7 @@ export default function SuburbanOrders() {
                             .patch("/orders/" + record._id, {
                               status: "Completed",
                               shippedDate: new Date(),
+                              paymentStatus: "Đã thanh toán"
                             })
                             .then((response) => {
                               message.success("Xác nhận đã giao thành công!");
@@ -365,7 +366,7 @@ export default function SuburbanOrders() {
                       // Cancel
                       const id = record._id;
                       axiosClient
-                        .patch("/orders/" + id, { status: "Canceled" })
+                        .patch("/orders/" + id, { status: "Canceled", paymentStatus: "Hủy", importStatus: "Chờ nhập kho" })
                         .then((response) => {
                           message.success("Đơn hàng đã bị hủy!");
                           setRefresh((f) => f + 1);
