@@ -17,6 +17,7 @@ const items = [
           { label: 'Sản phẩm', key: 'management-products' },
           { label: 'Màu sản phẩm', key: 'management-colors',},
           { label: 'Hàng giảm giá', key: 'management-discount' },
+          { label: 'Sản phẩm yêu thích', key: 'management-promotion' },
         ],
       },
     ],
@@ -36,12 +37,12 @@ const items = [
             key: 'sales-ordersform',
           },
           {
-            label: 'Đơn hàng chờ xác nhận',
+            label: 'Tổng hợp đơn hàng',
             key: 'sales-orders',
           },
           {
-            label: 'Đơn hàng đã xác nhận',
-            key: 'sales-confirmed_orders',
+            label: 'Đơn hàng ngoại thành',
+            key: 'sales-suburbanOrders',
           },
           {
             label: 'Thông kê theo trạng thái',

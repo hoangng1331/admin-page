@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import numeral from 'numeral';
 import 'numeral/locales/vi';
 import React from 'react';
+import { Navigate } from 'react-router-dom';
 import './App.css';
 import Employees from './pages/Management/Employees';
 import Products from './pages/Management/Products';
@@ -29,6 +30,8 @@ import ConfirmedOrders from './pages/Sales/Ship/Confirmed';
 import ShippingOrders from './pages/Sales/Ship/Shipping';
 import CompletedOrders from './pages/Sales/Ship/Completed'
 import CanceledOrders from './pages/Sales/Ship/Canceled';
+import SuburbanOrders from './pages/Sales/Ship/Suburban';
+import Promotion from './pages/Management/Products/promotion';
 numeral.locale('vi');
 
 const { Header, Footer, Sider, Content } = Layout;  
@@ -42,16 +45,18 @@ function App() {
     axiosClient.get("/login/" + auth?.loggedInUser?._id, e).then((response) => {
       setName(response.data.fullName ? response.data.fullName : response.data.name.fullName);
     });}
-  }, []);
+  }, [auth]);
    return (
    <div style={{}}>
      <BrowserRouter>
      {!auth && (
          <Content style={{ padding: 24 }}>
            <Routes>
-             <Route path='/' element={<Login/>} />
+             <Route exact path='/' element={<Navigate to='/login' replace/>} />
+
+             <Route path='/login' element={<Login/>} />
              {/* NO MATCH ROUTE */}
-             <Route path='*' element={<Login/>} />
+             <Route path='*' element={<Navigate to='/login' replace/>} />
            </Routes>
          </Content>
        )}
@@ -81,17 +86,19 @@ function App() {
              </Header>
             <Content style={{ padding: 24 }}>
               <Routes>
-                <Route path='/' element={<Home />} />
+                <Route path='/login' element={<Navigate to='/home' replace/>} />
                 <Route path='/home' element={<Home />} />
-                <Route path='/management/categories' element={<Categories />} />
+                <Route path='/management/categories' element={<Categories/>} />
                 <Route path='/categories/:id/products' element={<Products1 />} />
                 <Route path='/management/employees' element={<Employees />} />
                 <Route path='/management/products' element={<Products />} />
                 <Route path='/management/discount' element={<Discount />} />
                 <Route path='/management/colors' element={<ColorForm />} />
+                <Route path='/management/promotion' element={<Promotion />} />
                 {/* SALES */}
 
                 <Route path='/sales/orders' element={<Orders />} />
+                <Route path='/sales/suburbanOrders' element={<SuburbanOrders />} />
                 <Route path='/sales/ordersform' element={<OrderForm />} />
                 <Route path='/sales/orders/status' element={<SearchOrdersByStatus />} />
                 <Route path='/upload/form' element={<FormUpload />} />
@@ -138,12 +145,14 @@ function App() {
              </Header>
             <Content style={{ padding: 24 }}>
               <Routes>
-                <Route path='/' element={<Home />} />
+                <Route path='/login' element={<Navigate to='/home' replace/>} />
                 <Route path='/home' element={<Home />} />
                 <Route path='/management/discount' element={<Discount />} />
+                <Route path='/management/promotion' element={<Promotion />} />
                 <Route path='/management/products' element={<Products />} />
                 {/* SALES */}
 
+                <Route path='/sales/suburbanOrders' element={<SuburbanOrders />} />
                 <Route path='/sales/orders' element={<Orders />} />
                 <Route path='/sales/ordersform' element={<OrderForm />} />
                 <Route path='/sales/orders/status' element={<SearchOrdersByStatus />} />
@@ -192,7 +201,7 @@ function App() {
             <Content style={{ padding: 24 }}>
               <Routes>
                 {/* SALES */}
-
+                <Route path='/login' element={<Navigate to='/sales/orders' replace/>} />
                 <Route path='/sales/orders' element={<Orders />} />
                 <Route path='/sales/ordersform' element={<OrderForm />} />
                 <Route path='/sales/orders/status' element={<SearchOrdersByStatus />} />
@@ -240,7 +249,7 @@ function App() {
              </Header>
             <Content style={{ padding: 24 }}>
               <Routes>
-                <Route path='/' element={<Home />} />
+                <Route path='/login' element={<Navigate to='/sales/confirmedOrders' replace/>} />
                 <Route path='/account' element={<Account />} />
                 <Route path='/sales/confirmedOrders' element={<ConfirmedOrders />} />
                 <Route path='/sales/shippingOrders' element={<ShippingOrders />} />

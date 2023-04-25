@@ -45,6 +45,7 @@ export default function ShippingOrders() {
   const [employees, setEmployees] = React.useState([]);
   const { auth, logout } = useAuthStore((state) => state);
   const [employeeLoginId, setEmployeeLoginId] = React.useState("");
+  const [shipperId, setShipperId] = React.useState("");
   React.useEffect(
     (e) => {
       if (auth) {
@@ -52,10 +53,11 @@ export default function ShippingOrders() {
           .get("/login/" + auth?.loggedInUser?._id)
           .then((response) => {
             setEmployeeLoginId(response.data._id);
+            setShipperId(response.data.employeeId)
           });
       }
     },
-    [refresh]
+    [refresh, auth, shipperId]
   );
   // Products
   const [products, setProducts] = React.useState([]);
@@ -290,7 +292,7 @@ export default function ShippingOrders() {
     },
   ];
   React.useEffect(() => {
-    axiosClient.post("/orders/status", {status: "Shipping"}).then((response) => {
+    axiosClient.post("/orders/status&shipperId", {status: "Shipping", shipperId: shipperId}).then((response) => {
       setOrders(response.data);
     });
     axiosClient
@@ -326,7 +328,7 @@ export default function ShippingOrders() {
     }
 
     fetchEmployees();
-  }, [refresh]);
+  }, [refresh, auth, shipperId]);
   
   return (
     <div>

@@ -50,6 +50,7 @@ export default function Orders() {
   const [orders, setOrders] = React.useState([]);
   const [employees, setEmployees] = React.useState([]);
   const { auth, logout } = useAuthStore((state) => state);
+  const [payStatus, setPayStatus] = React.useState("");
   const [employeeLoginId, setEmployeeLoginId] = React.useState("");
   React.useEffect(
     (e) => {
@@ -387,10 +388,10 @@ export default function Orders() {
                 onClick={() => {
                   setSelectedOrderView(record);
                   axiosClient
-          .get("/employees/" + record?.verifier?.employeeId)
-          .then((response) => {
-            setVerifierName(response.data.fullName);
-          });
+                    .get("/employees/" + record?.verifier?.employeeId)
+                    .then((response) => {
+                      setVerifierName(response.data.fullName);
+                    });
                   setRefresh((f) => f + 1);
                 }}
                 icon={<EyeOutlined />}
@@ -406,111 +407,12 @@ export default function Orders() {
               />
             )}
             {record.status === "Canceled" ? (
-            <Popconfirm
-            disabled={record.importStatus === "Đã nhập kho"}
-            style={{ width: 800 }}
-            title="Hàng của đơn bị hủy đã được nhập kho?"
-            onConfirm={() => {
-              setDelectedOrder(record);
-              const id = record._id;
-              delectedOrder.orderDetails.forEach(async (orderDetail) => {
-                const remainQuantity = await axiosClient.get(
-                  `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`
-                );
-                axiosClient.patch(
-                  `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`,
-                  {
-                    quantity:
-                      remainQuantity.data.quantity + orderDetail.quantity,
-                  }
-                );
-                setRefresh((f) => f + 1);
-              });
-              axiosClient
-                .patch("/orders/" + id, {importStatus: "Đã nhập kho"})
-                .then((response) => {
-                  message.success("Nhập kho thành công!");
-                  setRefresh((f) => f + 1);
-                })
-                .catch((err) => {
-                  message.error("Lỗi!");
-                });
-            }}
-            onCancel={() => {}}
-            okText="Đồng ý"
-            cancelText="Đóng"
-          >
-            <Button
-              disabled={record.importStatus === "Đã nhập kho"}
-              type="primary"
-              onClick={() => {
-                setDelectedOrder(record);
-                setRefresh((f) => f + 1);
-              }}
-            >Nhập kho</Button>
-          </Popconfirm>):
-            (<>
-            <Button
-              type="primary"
-              ghost
-              onClick={async (values) => {
-                if (record.shippingFee === 0 && !record.shipperId) {
-                  message.error(
-                    "Hãy chọn shipper trước khi xác nhận đơn hàng!"
-                  );
-                } else {
-                  await axiosClient
-                    .patch("/orders/" + record._id, { status: "Confirmed", verifyId: employeeLoginId })
-                    .then((response) => {
-                      message.success("Đơn hàng đã được xác nhận!");
-                      setRefresh((f) => f + 1);
-                    });
-                }
-              }}
-              icon={<CheckOutlined />}
-              disabled={isDisabled}
-            />
-              {isChanged ? (
               <Popconfirm
+                disabled={record.importStatus === "Đã nhập kho"}
                 style={{ width: 800 }}
-                title="Are you sure to cancel?"
+                title="Hàng của đơn bị hủy đã được nhập kho?"
                 onConfirm={() => {
                   setDelectedOrder(record);
-                  // Cancel
-                  const id = record._id;
-                  axiosClient
-                    .patch("/orders/" + id, { status: "Canceled" })
-                    .then((response) => {
-                      message.success("Đơn hàng đã bị hủy!");
-                      setRefresh((f) => f + 1);
-                    })
-                    .catch((err) => {
-                      message.error("Hủy bị lỗi!");
-                    });
-                  console.log("DELETE", record);
-                }}
-                onCancel={() => {}}
-                okText="Đồng ý"
-                cancelText="Đóng"
-              >
-                <Button
-                  danger
-                  type="dashed"
-                  onClick={() => {
-                    setDelectedOrder(record);
-                    setRefresh((f) => f + 1);
-                  }}
-                  icon={<CloseOutlined />}
-                />
-              </Popconfirm>
-            ) : (
-              <Popconfirm
-                disabled={isDisabled}
-                style={{ width: 800 }}
-                title="Are you sure to delete?"
-                onConfirm={() => {
-                  setDelectedOrder(record);
-                  // DELETE
                   const id = record._id;
                   delectedOrder.orderDetails.forEach(async (orderDetail) => {
                     const remainQuantity = await axiosClient.get(
@@ -526,32 +428,141 @@ export default function Orders() {
                     setRefresh((f) => f + 1);
                   });
                   axiosClient
-                    .delete("/orders/" + id)
+                    .patch("/orders/" + id, { importStatus: "Đã nhập kho" })
                     .then((response) => {
-                      message.success("Xóa thành công!");
+                      message.success("Nhập kho thành công!");
                       setRefresh((f) => f + 1);
                     })
                     .catch((err) => {
-                      message.error("Xóa bị lỗi!");
+                      message.error("Lỗi!");
                     });
-                  console.log("DELETE", record);
                 }}
                 onCancel={() => {}}
                 okText="Đồng ý"
                 cancelText="Đóng"
               >
                 <Button
-                  danger
-                  type="dashed"
+                  disabled={record.importStatus === "Đã nhập kho"}
+                  type="primary"
                   onClick={() => {
                     setDelectedOrder(record);
                     setRefresh((f) => f + 1);
                   }}
-                  icon={<DeleteOutlined />}
+                >
+                  Nhập kho
+                </Button>
+              </Popconfirm>
+            ) : (
+              <>
+                <Button
+                  type="primary"
+                  ghost
+                  onClick={async (values) => {
+                    if (record.shippingFee === 0 && !record.shipperId) {
+                      message.error(
+                        "Hãy chọn shipper trước khi xác nhận đơn hàng!"
+                      );
+                    } else {
+                      await axiosClient
+                        .patch("/orders/" + record._id, {
+                          status: "Confirmed",
+                          verifyId: employeeLoginId,
+                        })
+                        .then((response) => {
+                          message.success("Đơn hàng đã được xác nhận!");
+                          setRefresh((f) => f + 1);
+                        });
+                    }
+                  }}
+                  icon={<CheckOutlined />}
                   disabled={isDisabled}
                 />
-              </Popconfirm>
-            )} </>)}
+                {isChanged ? (
+                  <Popconfirm
+                    style={{ width: 800 }}
+                    title="Are you sure to cancel?"
+                    onConfirm={() => {
+                      setDelectedOrder(record);
+                      // Cancel
+                      const id = record._id;
+                      axiosClient
+                        .patch("/orders/" + id, { status: "Canceled" })
+                        .then((response) => {
+                          message.success("Đơn hàng đã bị hủy!");
+                          setRefresh((f) => f + 1);
+                        })
+                        .catch((err) => {
+                          message.error("Hủy bị lỗi!");
+                        });
+                    }}
+                    onCancel={() => {}}
+                    okText="Đồng ý"
+                    cancelText="Đóng"
+                  >
+                    <Button
+                      danger
+                      type="dashed"
+                      onClick={() => {
+                        setDelectedOrder(record);
+                        setRefresh((f) => f + 1);
+                      }}
+                      icon={<CloseOutlined />}
+                    />
+                  </Popconfirm>
+                ) : (
+                  <Popconfirm
+                    disabled={isDisabled}
+                    style={{ width: 800 }}
+                    title="Are you sure to delete?"
+                    onConfirm={() => {
+                      setDelectedOrder(record);
+                      // DELETE
+                      const id = record._id;
+                      delectedOrder.orderDetails.forEach(
+                        async (orderDetail) => {
+                          const remainQuantity = await axiosClient.get(
+                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`
+                          );
+                          axiosClient.patch(
+                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`,
+                            {
+                              quantity:
+                                remainQuantity.data.quantity +
+                                orderDetail.quantity,
+                            }
+                          );
+                          setRefresh((f) => f + 1);
+                        }
+                      );
+                      axiosClient
+                        .delete("/orders/" + id)
+                        .then((response) => {
+                          message.success("Xóa thành công!");
+                          setRefresh((f) => f + 1);
+                        })
+                        .catch((err) => {
+                          message.error("Xóa bị lỗi!");
+                        });
+                      console.log("DELETE", record);
+                    }}
+                    onCancel={() => {}}
+                    okText="Đồng ý"
+                    cancelText="Đóng"
+                  >
+                    <Button
+                      danger
+                      type="dashed"
+                      onClick={() => {
+                        setDelectedOrder(record);
+                        setRefresh((f) => f + 1);
+                      }}
+                      icon={<DeleteOutlined />}
+                      disabled={isDisabled}
+                    />
+                  </Popconfirm>
+                )}{" "}
+              </>
+            )}
           </Space>
         );
       },
@@ -806,7 +817,8 @@ export default function Orders() {
                     >
                       {employees
                         .filter(
-                          (employee) => employee.deliveryArea === selectedOrder.deliveryArea
+                          (employee) =>
+                            employee.deliveryArea === selectedOrder.deliveryArea
                         )
                         .map((employee) => (
                           <Select.Option
@@ -1094,8 +1106,8 @@ export default function Orders() {
                 <></>
               )}
               <Descriptions.Item label="Người xác nhận đơn">
-                  {selectedOrderView.verifier.fullName??verifierName}
-                </Descriptions.Item>
+                {selectedOrderView.verifier.fullName ?? verifierName}
+              </Descriptions.Item>
             </Descriptions>
             <Divider />
             <Table

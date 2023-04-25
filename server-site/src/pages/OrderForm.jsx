@@ -212,7 +212,7 @@ const OrderForm = () => {
     if (selectedProduct.stockByColor[colorId] === 0) {
       message.error(
         "Màu " +
-          record.children[0] +
+          record.children[1] +
           " của " +
           selectedProduct.name +
           " đã hết hàng"
@@ -234,7 +234,7 @@ const OrderForm = () => {
   };
   const handleSizeChange = (sizeId, record) => {
     const size = selectedColor.sizes.find((s) => s.sizeId === sizeId);
-    if (record.children[2] === 0) {
+    if (record.children[3] === 0) {
       message.error(
         "Màu " +
           selectedProduct.color[index2].name +
@@ -271,7 +271,7 @@ const OrderForm = () => {
     if (!selectedProduct || !selectedColor || !selectedSize) {
       message.error("Vui lòng chọn sản phẩm, màu sắc và kích cỡ");
       return;
-    }
+    } 
 
     if (quantity > selectedSize.quantity) {
       message.error("Số lượng đặt hàng vượt quá số lượng hàng có sẵn");
@@ -520,8 +520,7 @@ const OrderForm = () => {
                         min={1}
                         max={selectedSize.quantity}
                         value={quantity}
-                        onChange={(value) =>
-                          value && setQuantity(parseInt(value))
+                        onChange={(value) => value && setQuantity(parseInt(value))
                         }
                       />
                     </Form.Item>
@@ -705,7 +704,7 @@ const OrderForm = () => {
                           min={1}
                           max={selectedSize.quantity}
                           value={quantity}
-                          onChange={(value) =>
+                          onChange={(value) => 
                             value && setQuantity(parseInt(value))
                           }
                         />

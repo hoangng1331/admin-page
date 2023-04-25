@@ -40,7 +40,7 @@ export default function CompletedOrders() {
           });
       }
     },
-    [refresh]
+    [refresh, auth, shipperId]
   );
   // Products
   const [products, setProducts] = React.useState([]);
@@ -228,7 +228,7 @@ export default function CompletedOrders() {
     },
   ];
   React.useEffect(() => {
-    axiosClient.post("/orders/status", {status: "Completed", shipperId: shipperId}).then((response) => {
+    axiosClient.post("/orders/status&shipperId", {status: "Completed", shipperId: shipperId}).then((response) => {
       setOrders(response.data);
     });
     axiosClient
@@ -264,7 +264,7 @@ export default function CompletedOrders() {
     }
 
     fetchEmployees();
-  }, [refresh]);
+  }, [refresh, auth, shipperId]);
   
   return (
     <div>

@@ -20,6 +20,7 @@ import {
   UploadOutlined,
   PlusCircleOutlined,
   PlusOutlined,
+  LikeFilled
 } from "@ant-design/icons";
 import {useAuthStore} from '../../../hooks/useAuthStore'
 import { axiosClient } from "../../../libraries/axiosClient";
@@ -27,7 +28,7 @@ import moment from "moment";
 import numeral from "numeral";
 import { API_URL } from "../../../constants/URLS";
 import ColorForm from "../../Colors";
-
+import XLSX from 'xlsx';
 export default function Products() {
   const [isPreview, setIsPreview] = React.useState(false);
   const [categories, setCategories] = React.useState([]);
@@ -41,8 +42,8 @@ export default function Products() {
   const [isModalVisible, setIsModalVisible] = React.useState(false);
   const { auth, logout } = useAuthStore((state) => state);
   const [useRole, setUseRole] = React.useState("");
-  const [isReadOnly, setIsReadOnly] = React.useState(useRole !== 'Admin');
-  React.useEffect((e) => {
+  const [exfile, setExFile] = React.useState(null);
+    React.useEffect((e) => {
     if (auth){
     axiosClient.get("/login/" + auth?.loggedInUser?._id, e).then((response) => {
       setUseRole(response.data.role);
@@ -209,7 +210,17 @@ export default function Products() {
                 updateForm.setFieldsValue(record);
                 setEditFormVisible(true);
               }}
-            />
+            /><Button
+            disabled={record.promotion === "Yes"}
+            type="dashed"
+            icon={<LikeFilled />}
+            onClick={() => {
+              axiosClient.patch("/products/"+record._id, {promotion: "Yes"}).then((response) => {
+                message.success("Đã thêm vào danh sách yêu thích")
+                setRefresh((f) => f + 1);
+              })
+            }}
+          />
             <Upload
               showUploadList={false}
               name="file"
@@ -293,6 +304,7 @@ export default function Products() {
         message.error("Thêm mới bị lỗi!");
       });
   };
+  
   const onFinishFailed = (errors, response, values) => {
     console.log("🐣", errors.values);
   };
@@ -626,7 +638,7 @@ export default function Products() {
             rules={[{ required: true, message: "Hãy chọn loại sản phẩm!" }]}
             hasFeedback
           >
-            <Select disabled={isReadOnly}
+            <Select disabled={useRole !== 'Admin'}
               options={
                 categories &&
                 categories.map((c) => {
@@ -645,14 +657,14 @@ export default function Products() {
             rules={[{ required: true, message: "Hãy nhập tên sản phẩm!" }]}
             hasFeedback
           >
-            <Input readOnly={isReadOnly}/>
+            <Input readOnly={useRole !== 'Admin'}/>
           </Form.Item>
 
           <Form.Item label="Mô tả sản phẩm" name="description" hasFeedback>
-            <Input.TextArea  readOnly={isReadOnly} />
+            <Input.TextArea  readOnly={useRole !== 'Admin'} />
           </Form.Item>
           <Form.Item label="Hướng dẫn bảo quản" name="preserveGuide" hasFeedback>
-          <Input.TextArea  readOnly={isReadOnly}/>
+          <Input.TextArea  readOnly={useRole !== 'Admin'}/>
         </Form.Item>
           <Form.List name="variants">
             {(fields, { add, remove }) => (
@@ -665,7 +677,7 @@ export default function Products() {
                       fieldKey={[field.fieldKey, "colorId"]}
                       rules={[{ required: true, message: "Hãy chọn một màu!" }]}
                     >
-                     <Select disabled={isReadOnly}
+                     <Select disabled={useRole !== 'Admin'}
                       showSearch
                       value={colors}
                       optionFilterProp="children"
@@ -743,7 +755,7 @@ export default function Products() {
                       ]}
                       fieldKey={[field.fieldKey, "price"]}
                     >
-                      <Input type="number" min={0} style={{ width: 150 }}  readOnly={isReadOnly}/>
+                      <Input type="number" min={0} style={{ width: 150 }}  readOnly={useRole !== 'Admin'}/>
                     </Form.Item>
                     <Form.Item
                       label="Discount"
@@ -756,7 +768,7 @@ export default function Products() {
                         min={0}
                         max={100}
                         style={{ width: 100 }}
-                        readOnly={isReadOnly && useRole !== "Quản lý"}
+                        readOnly={useRole !== 'Admin' && useRole !== "Quản lý"}
                       />
                     </Form.Item>
                     <Form.Item
@@ -780,7 +792,7 @@ export default function Products() {
                                     },
                                   ]}
                                 >
-                                  <Select disabled={isReadOnly}
+                                  <Select disabled={useRole !== 'Admin'}
                                     style={{ width: 150 }}
                                     options={
                                       sizes &&

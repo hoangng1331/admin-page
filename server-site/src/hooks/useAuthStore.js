@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { axiosClient } from '../libraries/axiosClient';
+import { message } from 'antd';
 
 export const useAuthStore = create(
   devtools(
@@ -17,15 +18,24 @@ export const useAuthStore = create(
               role,
             })
             .then((response) => {
-              window.location.reload();
+              axiosClient
+            .patch('/login/'+ response.data.loggedInUser._id, {
+              status: "Online"
+            })
               return set({ auth: response.data }, false, { type: 'auth/login-success' });
             })
             .catch((err) => {
+              message.error("Đăng nhập không thành công, vui lòng kiểm tra lại thông tin!")
               return set({ auth: null }, false, { type: 'auth/login-error' });
             });
         },
-        logout: () => {
+        logout: () => {      
+
           // AXIOS: Call 1 api login => user
+          axiosClient
+            .patch('/login/'+ get().auth.loggedInUser._id, {
+              status: "Offline"
+            })
           return set({ auth: null }, false, { type: 'auth/logout-success' });
         },
       }),
