@@ -488,6 +488,7 @@ export default function SuburbanOrders() {
     <div>
       <Form.Item label="Trạng thái đơn hàng" name="status">
         <Select
+          defaultValue={""}
           options={OrderStatus}
           onChange={(value) => {
             setStatus(value);

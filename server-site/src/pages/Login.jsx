@@ -3,10 +3,18 @@ import { Form, Input, Button, Divider, Select } from "antd";
 import { useAuthStore } from "../hooks/useAuthStore";
 // const Login = () => {
 export default function Login() {
+  const validateUsername = (rule, value, callback) => {
+    const regex = /^[A-Za-z0-9_\.@]+$/;
+    if (!value || value.trim() === '' || regex.test(value)) {
+      callback();
+    } else {
+      callback('Tên đăng nhập không hợp lệ');
+    }
+  };
   const { login } = useAuthStore((state) => state);
   const onFinish = (values, e) => {
-    const { username, password, role } = values;
-    login({ username, password, role });
+    const { username, password } = values;
+    login({ username, password });
   };
 
   return (
@@ -26,7 +34,7 @@ export default function Login() {
           name="username"
           rules={[
             { required: true, message: "Tên đăng nhập được để trống" },
-            { type: "string", message: "Tên đăng nhập không hợp lệ" },
+            { validator: validateUsername },
           ]}
         >
           <Input placeholder="Nhập tên đăng nhập" />
@@ -38,30 +46,15 @@ export default function Login() {
           rules={[
             { required: true, message: "Mật khẩu không được để trống" },
             {
-              min: 6,
-              max: 10,
-              message: "Độ dài mật khẩu phải nằm trong khoảng 6 đến 10 ký tự",
+              min: 1,
+              max: 30,
+              message: "Độ dài mật khẩu phải nằm trong khoảng 1 đến 30 ký tự",
             },
           ]}
         >
           <Input.Password placeholder="Nhập mật khẩu" />
         </Form.Item>
 
-        <Form.Item
-          label="Vị trí công việc"
-          name="role"
-          rules={[{ required: true, message: "Chưa chọn vị trí công việc" }]}
-          hasFeedback
-        >
-          <Select placeholder="Chọn vị trí công việc">
-            <Select.Option value="Admin">Admin</Select.Option>
-            <Select.Option value="Chăm sóc khách hàng">
-              Chăm sóc khách hàng
-            </Select.Option>
-            <Select.Option value="Giao hàng">Giao hàng</Select.Option>
-            <Select.Option value="Quản lý">Quản lý</Select.Option>
-          </Select>
-        </Form.Item>
         <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
           <Button type="primary" htmlType="submit" style={{ minWidth: 120 }}>
             Đăng nhập

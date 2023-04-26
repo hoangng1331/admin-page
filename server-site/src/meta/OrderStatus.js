@@ -1,8 +1,31 @@
 export const OrderStatus = [
-  { label: '[Chọn trạng thái đơn hàng]', value: '' },
-  { label: 'ĐANG XỬ LÝ', value: 'Waiting' },
-  { label: 'ĐÃ GIAO HÀNG THÀNH CÔNG', value: 'Completed' },
-  { label: 'ĐÃ HỦY', value: 'Canceled' },
-  { label: 'ĐÃ XÁC NHẬN', value: 'Confirmed' },
-  { label: 'ĐANG GIAO HÀNG', value: 'Shipping' },
+  { label: 'Tất cả', value: '' },
+  { label: 'Đang xử lý', value: 'Waiting' },
+  { label: 'Đã xác nhận', value: 'Confirmed' },
+  { label: 'Đang giao hàng', value: 'Shipping' },
+  { label: 'Đã hoàn thành', value: 'Completed' },
+  { label: 'Đã hủy', value: 'Canceled' },
+];
+export const OrderPayment = [
+  { label: 'Tất cả', value: '' },
+  { label: 'Tiền mặt', value: 'Cash' },
+  { label: 'Thẻ tín dụng', value: 'Credit Card' },
+  { label: 'Chuyển khoản qua ngân hàng', value: 'Bank Transfer' },
+];
+export const PaymentStatus = [
+  { label: 'Tất cả', value: '' },
+  { label: 'Đã thanh toán', value: 'Đã thanh toán' },
+  { label: 'Chưa thanh toán', value: 'Chưa thanh toán' },
+  { label: 'Đã hủy', value: 'Hủy' },
+];
+export const DeliveryArea = [
+  { label: 'Tất cả', value: '' },
+  { label: "Ngũ Hành Sơn", value:  "Ngũ Hành Sơn" },
+  { label: "Hải Châu", value: "Hải Châu" },
+  { label: "Cẩm Lệ", value: "Cẩm Lệ"  },
+  { label: "Thanh Khê", value: "Thanh Khê" },
+  { label: "Liên Chiểu" , value: "Liên Chiểu" },
+  { label: "Sơn Trà", value:  "Sơn Trà"},
+  { label: "Hòa Vang", value: "Hòa Vang" },
+  { label: 'Ngoại thành', value: 'Ngoại thành' }, 
 ];

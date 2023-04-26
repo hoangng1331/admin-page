@@ -1,16 +1,31 @@
-import React from 'react';
-import { Table, Button, Form, message, Select,Descriptions, Modal, Divider } from 'antd';
-import { OrderStatus } from '../../../meta/OrderStatus';
-import { axiosClient } from '../../../libraries/axiosClient';
-import numeral from 'numeral';
+import React from "react";
 import {
-  EyeOutlined,
-} from "@ant-design/icons";
-
+  Table,
+  Button,
+  Form,
+  message,
+  Select,
+  Descriptions,
+  Modal,
+  Divider,
+  Switch
+} from "antd";
+import {
+  DeliveryArea,
+  OrderPayment,
+  OrderStatus,
+  PaymentStatus,
+} from "../../../meta/OrderStatus";
+import { axiosClient } from "../../../libraries/axiosClient";
+import numeral from "numeral";
+import { EyeOutlined } from "@ant-design/icons";
+const { Option } = Select;
 export default function SearchOrdersByStatus() {
   const [selectedOrderView, setSelectedOrderView] = React.useState(null);
   const [orderDetail, setOrderDetail] = React.useState([]);
   const [verifierName, setVerifierName] = React.useState();
+  const [isMultipleSelect, setIsMultipleSelect] = React.useState(false);
+
   const productColumnsView = [
     {
       title: "Sản phẩm",
@@ -177,19 +192,20 @@ export default function SearchOrdersByStatus() {
       key: "actions",
       render: (text, record) => {
         return (
-            <Button
-              onClick={() => {
-                setSelectedOrderView(record);
-                axiosClient
-                  .get("/employees/" + record?.verifier?.employeeId)
-                  .then((response) => {
-                    setVerifierName(response.data.fullName);
-                  });
-              }}
-              icon={<EyeOutlined />}
-            />)
-          }
-        }
+          <Button
+            onClick={() => {
+              setSelectedOrderView(record);
+              axiosClient
+                .get("/employees/" + record?.verifier?.employeeId)
+                .then((response) => {
+                  setVerifierName(response.data.fullName);
+                });
+            }}
+            icon={<EyeOutlined />}
+          />
+        );
+      },
+    },
   ];
   const [loading, setLoading] = React.useState(false);
   const [orders, setOrders] = React.useState([]);
@@ -205,42 +221,176 @@ export default function SearchOrdersByStatus() {
     axiosClient.get("/products").then((response) => {
       setProducts(response.data);
     });
-
-  }, []);
+  }, [selectedOrderView]);
 
   const onFinish = (values) => {
     setLoading(true);
     axiosClient
-      .post('/orders/status', values)
+      .post("/orders/status", values)
       .then((response) => {
         // console.log(response.data);
         setOrders(response.data);
         setLoading(false);
       })
       .catch((err) => {
-        message.error('Lỗi!');
+        message.error("Lỗi!");
         setLoading(false);
       });
   };
 
   const onFinishFailed = (errors) => {
-    console.log('🐣', errors);
+    console.log("🐣", errors);
   };
 
   return (
     <div>
-      <Form form={searchForm} name='search-form' labelCol={{ span: 8 }} wrapperCol={{ span: 16 }} initialValues={{ status: '' }} onFinish={onFinish} onFinishFailed={onFinishFailed} autoComplete='on'>
-        <Form.Item label='Trạng thái đơn hàng' name='status'>
-          <Select options={OrderStatus} />
+      <Form
+        form={searchForm}
+        name="search-form"
+        labelCol={{ span: 8 }}
+        wrapperCol={{ span: 16 }}
+        onFinish={onFinish}
+        onFinishFailed={onFinishFailed}
+        autoComplete="on"
+      >
+        <Switch checked={isMultipleSelect} onChange={() => setIsMultipleSelect(!isMultipleSelect)}
+        checkedChildren="Chọn nhiều"
+        unCheckedChildren="Chọn một" />
+        <Form.Item
+          label="Trạng thái đơn hàng"
+          name="status"
+          rules={[
+            {
+              required: isMultipleSelect,
+              message: "Phải có ít nhất 1 lựa chọn, chọn nhiều không hỗ trợ lựa chọn tất cả",
+            },
+          ]}
+        >
+          <Select
+            showSearch
+            mode={isMultipleSelect ? "multiple" : undefined}
+            optionFilterProp="children"
+            placeholder="Chọn trạng thái đơn hàng"
+          >
+            {isMultipleSelect ? (
+              <>
+            {OrderStatus.filter(status => status.value !== "").map((status) => (
+              <Option key={status.value} value={status.value}>
+                {status.label}
+              </Option>
+            ))}
+            </>):(
+              <>{OrderStatus.map((status) => (
+              <Option key={status.value} value={status.value}>
+                {status.label}
+              </Option>
+            ))}
+            </>)}
+          </Select>
         </Form.Item>
-
+        <Form.Item
+          label="Phương thức thanh toán"
+          name="paymentType"
+          rules={[
+            {
+              required: isMultipleSelect,
+              message: "Phải có ít nhất 1 lựa chọn, chọn nhiều không hỗ trợ lựa chọn tất cả",
+            },
+          ]}
+        >
+          <Select
+            showSearch
+            optionFilterProp="children"
+            placeholder="Chọn phương thức thanh toán"
+            mode={isMultipleSelect ? "multiple" : undefined}
+          >
+           {isMultipleSelect ? (
+              <>
+            {OrderPayment.filter(payment => payment.value !== "").map((payment) => (
+              <Option key={payment.value} value={payment.value}>
+                {payment.label}
+              </Option>
+            ))}
+            </>):(
+              <>{OrderPayment.map((payment) => (
+              <Option key={payment.value} value={payment.value}>
+                {payment.label}
+              </Option>
+            ))}
+            </>)}
+          </Select>
+        </Form.Item>
+        <Form.Item
+          label="Trạng thái thanh toán"
+          name="paymentStatus"
+          rules={[
+            {
+              required: isMultipleSelect,
+              message: "Phải có ít nhất 1 lựa chọn, chọn nhiều không hỗ trợ lựa chọn tất cả",
+            },
+          ]}
+        >
+          <Select
+            showSearch
+            optionFilterProp="children"
+            placeholder="Chọn trạng thái thanh toán"
+            mode={isMultipleSelect ? "multiple" : undefined}
+          >
+            {isMultipleSelect ? (
+              <>
+            {PaymentStatus.filter(paymentStatus => paymentStatus.value !== "").map((paymentStatus) => (
+              <Option key={paymentStatus.value} value={paymentStatus.value}>
+                {paymentStatus.label}
+              </Option>
+            ))}
+            </>):(
+              <>{PaymentStatus.map((paymentStatus) => (
+              <Option key={paymentStatus.value} value={paymentStatus.value}>
+                {paymentStatus.label}
+              </Option>
+            ))}
+            </>)}
+          </Select>
+        </Form.Item>
+        <Form.Item
+          label="Khu vực giao hàng"
+          name="deliveryArea"
+          rules={[
+            {
+              required: isMultipleSelect,
+              message: "Phải có ít nhất 1 lựa chọn, chọn nhiều không hỗ trợ lựa chọn tất cả",
+            },
+          ]}
+        >
+          <Select
+            showSearch
+            optionFilterProp="children"
+            placeholder="Chọn khu vực giao hàng"
+            mode={isMultipleSelect ? "multiple" : undefined}
+          >
+            {isMultipleSelect ? (
+              <>
+            {DeliveryArea.filter(area => area.value !== "").map((area) => (
+              <Option key={area.value} value={area.value}>
+                {area.label}
+              </Option>
+            ))}
+            </>):(
+              <>{DeliveryArea.map((area) => (
+              <Option key={area.value} value={area.value}>
+                {area.label}
+              </Option>
+            ))}
+            </>)}
+          </Select>
+        </Form.Item>
         <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-          <Button type='primary' htmlType='submit' loading={loading}>
-            {loading ? 'Đang xử lý ...' : 'Lọc thông tin'}
+          <Button type="primary" htmlType="submit" loading={loading}>
+            {loading ? "Đang xử lý ..." : "Lọc thông tin"}
           </Button>
         </Form.Item>
       </Form>
-      <Table rowKey='_id' dataSource={orders} columns={columns} />
+      <Table rowKey="_id" dataSource={orders} columns={columns} />
       <Modal
         centered
         width={"90%"}

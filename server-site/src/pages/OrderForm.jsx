@@ -408,9 +408,9 @@ const OrderForm = () => {
           rules={[{ required: true }]}
         >
           <Select showSearch optionFilterProp="children">
-            <Option value="CASH">Tiền mặt</Option>
-            <Option value="CREDIT CARD">Thẻ tín dụng</Option>
-            <Option value="BANK TRANSFER">Chuyển khoản ngân hàng</Option>
+            <Option value="Cash">Tiền mặt</Option>
+            <Option value="Credit Card">Thẻ tín dụng</Option>
+            <Option value="Bank Transfer">Chuyển khoản qua ngân hàng</Option>
           </Select>
         </Form.Item>
         <Form.Item

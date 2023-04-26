@@ -15,7 +15,6 @@ export const useAuthStore = create(
             .post('/auth/login-jwt', {
               username,
               password,
-              role,
             })
             .then((response) => {
               axiosClient
