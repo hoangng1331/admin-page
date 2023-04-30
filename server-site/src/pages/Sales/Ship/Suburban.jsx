@@ -45,6 +45,20 @@ export default function SuburbanOrders() {
   React.useEffect(
     (e) => {
       if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
+
+  React.useEffect(
+    (e) => {
+      if (auth) {
         axiosClient
           .get("/login/" + auth?.loggedInUser?._id)
           .then((response) => {
@@ -233,6 +247,7 @@ export default function SuburbanOrders() {
           <Space>
             <Button
               onClick={() => {
+                setRefresh((f) => f + 1)
                 setSelectedOrderView(record);
                 axiosClient
                   .get("/employees/" + record?.verifier?.employeeId)
@@ -249,6 +264,7 @@ export default function SuburbanOrders() {
                 style={{ width: 800 }}
                 title="Hàng của đơn bị hủy đã được nhập kho?"
                 onConfirm={() => {
+                  setRefresh((f) => f + 1)
                   setDelectedOrder(record);
                   const id = record._id;
                   delectedOrder.orderDetails.forEach(async (orderDetail) => {
@@ -274,7 +290,7 @@ export default function SuburbanOrders() {
                       message.error("Lỗi!");
                     });
                 }}
-                onCancel={() => {}}
+                onCancel={() => {setRefresh((f) => f + 1)}}
                 okText="Đồng ý"
                 cancelText="Đóng"
               >
@@ -298,6 +314,7 @@ export default function SuburbanOrders() {
                         type="primary"
                         ghost
                         onClick={async (values) => {
+                          setRefresh((f) => f + 1)
                           await axiosClient
                             .patch("/orders/" + record._id, {
                               status: "Completed",
@@ -317,6 +334,7 @@ export default function SuburbanOrders() {
                         type="primary"
                         ghost
                         onClick={async (values) => {
+                          setRefresh((f) => f + 1)
                           await axiosClient
                             .patch("/orders/" + record._id, {
                               status: "Shipping",
@@ -337,6 +355,7 @@ export default function SuburbanOrders() {
                     type="primary"
                     ghost
                     onClick={async (values) => {
+                      setRefresh((f) => f + 1)
                       if (record.shippingFee === 0 && !record.shipperId) {
                         message.error(
                           "Hãy chọn shipper trước khi xác nhận đơn hàng!"
@@ -362,6 +381,7 @@ export default function SuburbanOrders() {
                     style={{ width: 800 }}
                     title="Are you sure to cancel?"
                     onConfirm={() => {
+                      setRefresh((f) => f + 1)
                       setDelectedOrder(record);
                       // Cancel
                       const id = record._id;
@@ -375,7 +395,7 @@ export default function SuburbanOrders() {
                           message.error("Hủy bị lỗi!");
                         });
                     }}
-                    onCancel={() => {}}
+                    onCancel={() => {setRefresh((f) => f + 1)}}
                     okText="Đồng ý"
                     cancelText="Đóng"
                   >
@@ -395,6 +415,7 @@ export default function SuburbanOrders() {
                     style={{ width: 800 }}
                     title="Are you sure to delete?"
                     onConfirm={() => {
+                      setRefresh((f) => f + 1)
                       setDelectedOrder(record);
                       // DELETE
                       const id = record._id;
@@ -425,7 +446,7 @@ export default function SuburbanOrders() {
                         });
                       console.log("DELETE", record);
                     }}
-                    onCancel={() => {}}
+                    onCancel={() => {setRefresh((f) => f + 1)}}
                     okText="Đồng ý"
                     cancelText="Đóng"
                   >
@@ -491,6 +512,7 @@ export default function SuburbanOrders() {
           defaultValue={""}
           options={OrderStatus}
           onChange={(value) => {
+            setRefresh((f) => f + 1)
             setStatus(value);
           }}
         />
@@ -503,6 +525,7 @@ export default function SuburbanOrders() {
         open={selectedOrderView}
         onOk={() => setSelectedOrderView(null)}
         onCancel={() => {
+          setRefresh((f) => f + 1)
           setSelectedOrderView(null);
         }}
       >

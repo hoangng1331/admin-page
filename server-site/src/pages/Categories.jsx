@@ -1,15 +1,28 @@
 import { Button, Input, Form, Table, Modal, Space  } from 'antd';
 import React from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { axiosClient } from '../libraries/axiosClient';
-
+import { useAuthStore } from "../hooks/useAuthStore";
 export default function Categories() {
   const [refresh, setRefresh] = React.useState(0)
   const [products, setProducts] = React.useState([]);
   const [changeModal, setChangeModal] = React.useState(false);
   const [saveChange, setSaveChange] = React.useState(null);
-  
-   // const [createForm] = Form.useForm;
+  const { auth, logout } = useAuthStore((state) => state);
+
+  React.useEffect(
+    (e) => {
+      if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
   const columns = [
     {
       title: 'STT', 
@@ -33,7 +46,9 @@ export default function Categories() {
       key: 'action',
       render: (text, record, index)=>{
           return (<Space>
-            <Button onClick={() => changeData(record)}>Sửa</Button> 
+            <Button onClick={() => {
+              setRefresh((f)=> f + 1)
+              changeData(record)}}>Sửa</Button> 
             <Button onClick={() => {<Navigate to="/category/product" replace/>}}>Xem</Button>             
             </Space>)
       }

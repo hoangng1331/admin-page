@@ -28,7 +28,7 @@ import numeral from "numeral";
 import { API_URL } from "../../../constants/URLS";
 import ColorForm from "../../Colors";
 import axios from "axios";
-export default function Products() {
+export default function Report () {
   const [isPreview, setIsPreview] = React.useState(false);
   const [categories, setCategories] = React.useState([]);
   const [products, setProducts] = React.useState([]);
@@ -39,25 +39,10 @@ export default function Products() {
   const [colors, setColors] = React.useState([]);
   const [sizes, setSizes] = React.useState([]);
   const [isModalVisible, setIsModalVisible] = React.useState(false);
-  const { auth, logout } = useAuthStore((state) => state);
+  const { auth } = useAuthStore((state) => state);
   const [useRole, setUseRole] = React.useState("");
   const [viewCategory, setViewCategory] = React.useState(null);
   const [newCategory, setNewCategory] = React.useState();
-
-  React.useEffect(
-    (e) => {
-      if (auth) {
-        const refreshToken = window.localStorage.getItem("refreshToken");
-        if (refreshToken) {
-          axiosClient.post("/auth/refresh-token", {
-            refreshToken: refreshToken,
-          });
-        }
-      }
-    },
-    [auth, logout, refresh]
-  );
-
   React.useEffect((e) => {
     if (auth) {
       axiosClient
@@ -79,7 +64,6 @@ export default function Products() {
               <React.Fragment>
                 <Image
                   onClick={() => {
-                    setRefresh((f) => f + 1);
                     setSelectedRecord(record);
                     setIsPreview(true);
                   }}
@@ -175,7 +159,6 @@ export default function Products() {
         return (
           <Button
             onClick={() => {
-              setRefresh((f) => f + 1);
               console.log("selectedRecord", record);
             }}
           >
@@ -197,7 +180,6 @@ export default function Products() {
                     style={{ width: 800 }}
                     title="Are you sure to delete?"
                     onConfirm={() => {
-                      setRefresh((f) => f + 1);
                       // DELETE
                       const id = record._id;
                       axiosClient
@@ -222,7 +204,6 @@ export default function Products() {
                   type="dashed"
                   icon={<EditOutlined />}
                   onClick={() => {
-                    setRefresh((f) => f + 1);
                     setSelectedRecord(record);
                     console.log("Selected Record", record);
                     updateForm.setFieldsValue(record);
@@ -234,7 +215,6 @@ export default function Products() {
                   type="dashed"
                   icon={<LikeFilled />}
                   onClick={() => {
-                    setRefresh((f) => f + 1);
                     axiosClient
                       .patch("/products/" + record._id, { promotion: "Yes" })
                       .then((response) => {
@@ -303,43 +283,49 @@ export default function Products() {
       .post("/products/category", { categoryId: viewCategory })
       .then((response) => {
         setProducts(response.data);
-        console.log(response.data);
+        // console.log(response.data);
       });
   }, [viewCategory, refresh]);
 
   const onFinish = (values) => {
-    console.log(values);
+    
+
+    const categoryId =(values.categoryId);
+    const description =(values.description);
+    const name =(values.name);
+    const preserveGuide =(values.preserveGuide);
+    const variants =(values.variants);
+   const data  = {
+    categoryId,description,name,preserveGuide,variants
+   } 
     axiosClient
-      .post("/products", values)
+      .post("/products", data)
       .then((response) => {
-        // UPLOAD FILES
+        // UPLOAD FILE
         const { _id } = response.data;
-        const formData = new FormData();
-
-        // Add all files to form data
-        for (let i = 0; i < file.length; i++) {
-          formData.append("files", file[i]);
-        }
-        // Upload all files simultaneously
-        Promise.all([axios.post(API_URL + "/upload/products/" + _id, formData)])
-          .then((responses) => {
-            // Check if all files were uploaded successfully
-            const uploadErrors = responses.filter((response) => {
-              return response.status !== 200;
-            });
-
-            if (uploadErrors.length === 0) {
-              message.success("Thêm mới thành công!");
-              createForm.resetFields();
-              setRefresh((f) => f + 1);
-            } else {
-              message.error("Upload file bị lỗi!");
-            }
+        const promises = values.file.map((obj) => {
+          const formData = new FormData();
+        
+          Object.keys(obj).forEach(key => {
+            formData.append(key, obj[key]);
+          })
+          axios.post(API_URL + "/upload/products/" + _id, formData)
+          .then((respose) => {
+            console.log(response)
+            message.success("Thêm mới thành công!");
+            createForm.resetFields();
+            setRefresh((f) => f + 1);
           })
           .catch((err) => {
-            console.log(err);
             message.error("Upload file bị lỗi!");
           });
+        
+        });
+        
+       
+
+          
+         
       })
       .catch((err) => {
         console.log(err);
@@ -351,7 +337,6 @@ export default function Products() {
     console.log("🐣", errors.values);
   };
   const showModal = () => {
-    setRefresh((f) => f + 1);
     setIsModalVisible(true);
   };
   const onUpdateFinish = (values) => {
@@ -431,7 +416,6 @@ export default function Products() {
                       type="text"
                       icon={<PlusOutlined />}
                       onClick={() => {
-                        setRefresh((f) => f + 1);
                         axiosClient
                           .post("/categories", { name: newCategory })
                           .then((response) => {
@@ -441,7 +425,7 @@ export default function Products() {
                                 " vào danh mục sản phẩm"
                             );
                             setRefresh((f) => f + 1);
-                            setNewCategory(null);
+                            setNewCategory(null)
                           })
                           .catch((err) => {
                             message.error(
@@ -637,10 +621,7 @@ export default function Products() {
                                 </Form.Item>
                                 <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                                   <Button
-                                    onClick={() => {
-                                      setRefresh((f) => f + 1);
-                                      removeSize(sizeField.name);
-                                    }}
+                                    onClick={() => removeSize(sizeField.name)}
                                     icon={<DeleteOutlined />}
                                   >
                                     Xóa kích cỡ
@@ -650,10 +631,7 @@ export default function Products() {
                             ))}
                             <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                               <Button
-                                onClick={() => {
-                                  setRefresh((f) => f + 1);
-                                  addSize();
-                                }}
+                                onClick={() => addSize()}
                                 icon={<PlusCircleOutlined />}
                               >
                                 Thêm kích cỡ
@@ -666,10 +644,7 @@ export default function Products() {
 
                     <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                       <Button
-                        onClick={() => {
-                          setRefresh((f) => f + 1);
-                          remove(field.name);
-                        }}
+                        onClick={() => remove(field.name)}
                         icon={<DeleteOutlined />}
                       >
                         Xóa màu
@@ -678,13 +653,7 @@ export default function Products() {
                   </div>
                 ))}
                 <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                  <Button
-                    onClick={() => {
-                      setRefresh((f) => f + 1);
-                      add();
-                    }}
-                    icon={<PlusCircleOutlined />}
-                  >
+                  <Button onClick={() => add()} icon={<PlusCircleOutlined />}>
                     Thêm màu
                   </Button>
                 </Form.Item>
@@ -701,7 +670,7 @@ export default function Products() {
                 return false;
               }}
             >
-              {file?.length >= 8 ? null : uploadButton}
+               {file?.length >= 8 ? null : uploadButton}
             </Upload>
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
@@ -717,9 +686,9 @@ export default function Products() {
         hasFeedback
       >
         <Select
-          style={{
-            width: 300,
-          }}
+        style={{
+          width: 300,
+        }}
           onChange={(value) => {
             setViewCategory(value);
           }}
@@ -736,7 +705,6 @@ export default function Products() {
       </Form.Item>
       <Button
         onClick={() => {
-          setRefresh((f) => f + 1);
           setViewCategory(null);
         }}
       >
@@ -991,11 +959,7 @@ export default function Products() {
                                 </Form.Item>
                                 <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                                   <Button
-                                    disabled={useRole !== "Admin"}
-                                    onClick={() => {
-                                      setRefresh((f) => f + 1);
-                                      removeSize(sizeField.name);
-                                    }}
+                                    onClick={() => removeSize(sizeField.name)}
                                     icon={<DeleteOutlined />}
                                   >
                                     Xóa kích cỡ
@@ -1005,11 +969,7 @@ export default function Products() {
                             ))}
                             <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                               <Button
-                                disabled={useRole !== "Admin"}
-                                onClick={() => {
-                                  setRefresh((f) => f + 1);
-                                  addSize();
-                                }}
+                                onClick={() => addSize()}
                                 icon={<PlusCircleOutlined />}
                               >
                                 Thêm kích cỡ
@@ -1022,11 +982,7 @@ export default function Products() {
 
                     <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                       <Button
-                        disabled={useRole !== "Admin"}
-                        onClick={() => {
-                          setRefresh((f) => f + 1);
-                          remove(field.name);
-                        }}
+                        onClick={() => remove(field.name)}
                         icon={<DeleteOutlined />}
                       >
                         Xóa màu
@@ -1035,14 +991,7 @@ export default function Products() {
                   </div>
                 ))}
                 <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                  <Button
-                    disabled={useRole !== "Admin"}
-                    onClick={() => {
-                      setRefresh((f) => f + 1);
-                      add();
-                    }}
-                    icon={<PlusCircleOutlined />}
-                  >
+                  <Button onClick={() => add()} icon={<PlusCircleOutlined />}>
                     Thêm màu
                   </Button>
                 </Form.Item>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Form,
   Input,
@@ -15,8 +15,6 @@ import numeral from "numeral";
 import {
   DeleteOutlined,
   EditOutlined,
-  UploadOutlined,
-  PlusCircleOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "../hooks/useAuthStore";
 import { axiosClient } from "../libraries/axiosClient";
@@ -26,24 +24,37 @@ const { Option } = Select;
 const OrderForm = () => {
   const { auth, logout } = useAuthStore((state) => state);
   const [form] = Form.useForm();
-  const [products, setProducts] = useState([]);
-  const [colors, setColors] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(null);
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [orderItems, setOrderItems] = useState([]);
-  const [sizeID, setSizeID] = useState([]);
-  const [index2, setIndex2] = useState(0);
+  const [products, setProducts] = React.useState([]);
+  const [colors, setColors] = React.useState([]);
+  const [selectedProduct, setSelectedProduct] = React.useState(null);
+  const [selectedColor, setSelectedColor] = React.useState(null);
+  const [selectedSize, setSelectedSize] = React.useState(null);
+  const [quantity, setQuantity] = React.useState(1);
+  const [orderItems, setOrderItems] = React.useState([]);
+  const [sizeID, setSizeID] = React.useState([]);
+  const [index2, setIndex2] = React.useState(0);
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
   const [selectedRecord, setSelectedRecord] = React.useState(null);
   const [editFormVisible, setEditFormVisible] = React.useState(false);
   const [indexNumber, setIndexNumber] = React.useState();
   const [refresh, setRefresh] = React.useState(0);
-  const [shippingFee, setShippingFee] = useState(0);
+  const [shippingFee, setShippingFee] = React.useState(0);
   const [employeeLoginId, setEmployeeLoginId] = React.useState("");
 
+  React.useEffect(
+    (e) => {
+      if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
   React.useEffect(
     (e) => {
       if (auth) {
@@ -54,7 +65,7 @@ const OrderForm = () => {
           });
       }
     },
-    [refresh]
+    [refresh, auth]
   );
 
   const columns = [
@@ -76,9 +87,13 @@ const OrderForm = () => {
       width: "auto",
       align: "left",
       render: (text, record) => {
-        const product = products.find((product) => product._id === record.productId);
+        const product = products.find(
+          (product) => product._id === record.productId
+        );
         const color = product?.color.find((color) => color._id === text);
-        const hexcode = product?.color.find((color) => color._id === record.colorId)?.hexcode[0].hex;
+        const hexcode = product?.color.find(
+          (color) => color._id === record.colorId
+        )?.hexcode[0].hex;
         return (
           <div style={{ display: "flex", alignItems: "center" }}>
             <span
@@ -94,7 +109,7 @@ const OrderForm = () => {
         );
       },
     },
-    
+
     {
       title: "Kích cỡ",
       dataIndex: "sizeId",
@@ -102,12 +117,16 @@ const OrderForm = () => {
       width: "auto",
       align: "center",
       render: (text, record) => {
-        const product = products.find((product) => product._id === record.productId);
-        const variant = product?.variants.findIndex((variant) => variant.colorId === record.colorId);
+        const product = products.find(
+          (product) => product._id === record.productId
+        );
+        const variant = product?.variants.findIndex(
+          (variant) => variant.colorId === record.colorId
+        );
         const size = product.size[variant]?.find((s) => s._id === text)?.size;
         return size || "";
-       },
-    },    
+      },
+    },
     {
       title: "Số lượng",
       dataIndex: "quantity",
@@ -147,6 +166,7 @@ const OrderForm = () => {
           <Space>
             <Button
               onClick={() => {
+                setRefresh((f) => f + 1);
                 setIndexNumber(index);
                 setSelectedRecord(record);
                 console.log("Selected Record", record);
@@ -157,6 +177,7 @@ const OrderForm = () => {
             />
             <Button
               onClick={() => {
+                setRefresh((f) => f + 1);
                 const updatedOrderItems = [...orderItems];
                 updatedOrderItems.splice(index, 1); // Xóa sản phẩm khỏi danh sách
                 setOrderItems(updatedOrderItems);
@@ -268,10 +289,11 @@ const OrderForm = () => {
   };
 
   const handleAddToOrder = () => {
+    setRefresh((f) => f + 1);
     if (!selectedProduct || !selectedColor || !selectedSize) {
       message.error("Vui lòng chọn sản phẩm, màu sắc và kích cỡ");
       return;
-    } 
+    }
 
     if (quantity > selectedSize.quantity) {
       message.error("Số lượng đặt hàng vượt quá số lượng hàng có sẵn");
@@ -299,7 +321,10 @@ const OrderForm = () => {
         quantity: quantity,
         price: selectedColor.price,
         discount: selectedColor.discount,
-        totalPrice: (100-selectedColor.discount)/100*selectedColor.price*quantity,
+        totalPrice:
+          ((100 - selectedColor.discount) / 100) *
+          selectedColor.price *
+          quantity,
       };
 
       setRefresh((f) => f + 1);
@@ -342,7 +367,7 @@ const OrderForm = () => {
             });
           })
           .catch((err) => {
-            console.log(err)
+            console.log(err);
             message.error("Vui lòng kiểm tra lại thông tin!");
           });
 
@@ -384,11 +409,14 @@ const OrderForm = () => {
         <Form.Item
           name="phoneNumber"
           label="Số điện thoại"
-          rules={[{ required: true, message: 'Hãy nhập số điện thoại!' },
-          {
-            pattern: /^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/,
-            message: 'Số điện thoại không hợp lệ!',
-          }]}
+          rules={[
+            { required: true, message: "Hãy nhập số điện thoại!" },
+            {
+              pattern:
+                /^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[0-6|8|9]|9[0-4|6-9])[0-9]{7}$/,
+              message: "Số điện thoại không hợp lệ!",
+            },
+          ]}
         >
           <Input />
         </Form.Item>
@@ -479,18 +507,18 @@ const OrderForm = () => {
               >
                 {selectedProduct.variants.map((variant, index) => (
                   <Option key={variant.colorId} value={variant.colorId}>
-                      <span
-                        style={{
-                          backgroundColor:
-                            selectedProduct.color[index].hexcode[0].hex,
-                            display: "inline-block",
-                            width: "10px",
-                            height: "10px",
-                            marginRight: "3px"
-                        }}
-                      />
-                        {selectedProduct.color[index].name} - Tồn kho:{" "}
-                        {selectedProduct.stockByColor[variant.colorId]}
+                    <span
+                      style={{
+                        backgroundColor:
+                          selectedProduct.color[index].hexcode[0].hex,
+                        display: "inline-block",
+                        width: "10px",
+                        height: "10px",
+                        marginRight: "3px",
+                      }}
+                    />
+                    {selectedProduct.color[index].name} - Tồn kho:{" "}
+                    {selectedProduct.stockByColor[variant.colorId]}
                   </Option>
                 ))}
               </Select>
@@ -520,7 +548,8 @@ const OrderForm = () => {
                         min={1}
                         max={selectedSize.quantity}
                         value={quantity}
-                        onChange={(value) => value && setQuantity(parseInt(value))
+                        onChange={(value) =>
+                          value && setQuantity(parseInt(value))
                         }
                       />
                     </Form.Item>
@@ -662,18 +691,18 @@ const OrderForm = () => {
                 >
                   {selectedProduct.variants.map((variant, index) => (
                     <Option key={variant.colorId} value={variant.colorId}>
-                        <span
-                          style={{
-                            backgroundColor:
-                              selectedProduct.color[index].hexcode[0].hex,
-                              display: "inline-block",
-                              width: "10px",
-                              height: "10px",
-                              marginRight: "3px"
-                          }}
-                        />
-                          {selectedProduct.color[index].name} - Tồn kho:{" "}
-                          {selectedProduct.stockByColor[variant.colorId]}
+                      <span
+                        style={{
+                          backgroundColor:
+                            selectedProduct.color[index].hexcode[0].hex,
+                          display: "inline-block",
+                          width: "10px",
+                          height: "10px",
+                          marginRight: "3px",
+                        }}
+                      />
+                      {selectedProduct.color[index].name} - Tồn kho:{" "}
+                      {selectedProduct.stockByColor[variant.colorId]}
                     </Option>
                   ))}
                 </Select>
@@ -704,7 +733,7 @@ const OrderForm = () => {
                           min={1}
                           max={selectedSize.quantity}
                           value={quantity}
-                          onChange={(value) => 
+                          onChange={(value) =>
                             value && setQuantity(parseInt(value))
                           }
                         />

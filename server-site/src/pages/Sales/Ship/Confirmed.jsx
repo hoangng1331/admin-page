@@ -55,6 +55,19 @@ export default function ConfirmedOrders() {
   React.useEffect(
     (e) => {
       if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
+  React.useEffect(
+    (e) => {
+      if (auth) {
         axiosClient
           .get("/login/" + auth?.loggedInUser?._id)
           .then((response) => {
@@ -238,6 +251,7 @@ export default function ConfirmedOrders() {
           <Space>
               <Button
                 onClick={() => {
+                  setRefresh((f) => f + 1)
                   setSelectedOrderView(record);
                   axiosClient
           .get("/employees/" + record?.verifier?.employeeId)
@@ -252,6 +266,7 @@ export default function ConfirmedOrders() {
               type="primary"
               ghost
               onClick={async (values) => {
+                setRefresh((f) => f + 1)
                   await axiosClient
                     .patch("/orders/" + record._id, {status: "Shipping"})
                     .then((response) => {
@@ -317,6 +332,7 @@ export default function ConfirmedOrders() {
         open={selectedOrderView}
         onOk={() => setSelectedOrderView(null)}
         onCancel={() => {
+          setRefresh((f) => f + 1)
           setSelectedOrderView(null);
         }}
       >

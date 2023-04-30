@@ -9,7 +9,7 @@ export const useAuthStore = create(
     persist(
       (set, get) => ({
         auth: null,
-        login: ({ username, password, role }) => {
+        login: ({ username, password }) => {
           // AXIOS: Call 1 api login => user
           axiosClient
             .post('/auth/login-jwt', {
@@ -17,11 +17,16 @@ export const useAuthStore = create(
               password,
             })
             .then((response) => {
-              axiosClient
+              if (response.data.loggedInUser.active===true){
+                axiosClient
             .patch('/login/'+ response.data.loggedInUser._id, {
               status: "Online"
             })
               return set({ auth: response.data }, false, { type: 'auth/login-success' });
+              } else {
+                message.error("Tài khoản bị vô hiệu hóa!")
+              }
+              
             })
             .catch((err) => {
               message.error("Đăng nhập không thành công, vui lòng kiểm tra lại thông tin!")

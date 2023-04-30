@@ -1,7 +1,8 @@
 import React from "react";
-import axios from "axios";
+import { axiosClient } from "../libraries/axiosClient";
 import {Form, Button, Input,  Table, Space, Modal } from "antd";
 import { ChromePicker } from "react-color";
+import { useAuthStore } from "../hooks/useAuthStore";
 
 
 export default function ColorForm () {
@@ -10,6 +11,22 @@ export default function ColorForm () {
   const [changeModal, setChangeModal] = React.useState(false);
   const [saveChange, setSaveChange] = React.useState(null);
   const [color, setColor] = React.useState("#ffffff");
+  const { auth, logout } = useAuthStore((state) => state);
+
+
+  React.useEffect(
+    (e) => {
+      if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
    // const [createForm] = Form.useForm;
   const columns = [
     {
@@ -58,18 +75,20 @@ export default function ColorForm () {
       width: '10%',
       render: (text, record, index)=>{
           return (
-            <Button onClick={() => changeData(record)}>Sửa</Button> 
+            <Button onClick={() => {setRefresh((f)=> f + 1)
+              changeData(record)}
+              }>Sửa</Button> 
           )
       }
     },  
   ]
     React.useEffect(() => {
-        axios.get('http://localhost:5000/colors').then((response)=>
+        axiosClient.get('/colors').then((response)=>
         setColors(response.data));
     }, [refresh]);
     const onFinish = (values) => {
       console.log('Success:', values);
-      axios.post('http://localhost:5000/colors', values).then((response)=>{
+      axiosClient.post('/colors', values).then((response)=>{
         
       setRefresh((f)=> f + 1)
       createForm.resetFields();
@@ -77,8 +96,9 @@ export default function ColorForm () {
       })
     };
     const onChange = (values) => {
+      setRefresh((f)=> f + 1)
       console.log('Success:', values);
-      axios.patch('http://localhost:5000/colors/'+saveChange._id, values).then((response)=>{
+      axiosClient.patch('/colors/'+saveChange._id, values).then((response)=>{
       setRefresh((f)=> f + 1)
       updateForm.resetFields();
       setChangeModal(false)
@@ -86,14 +106,17 @@ export default function ColorForm () {
       })
     };
     const handleColorChange = (newColor) => {
+      setRefresh((f)=> f + 1)
       setColor(newColor.hex); // lưu giá trị màu khi thay đổi vào state
     }
     const [createForm] = Form.useForm();
     const [updateForm] = Form.useForm();
     const onFinishFailed = (errorInfo) => {
+      setRefresh((f)=> f + 1)
       console.log('Failed:', errorInfo);
     };
     const changeData =(data)=>{
+      setRefresh((f)=> f + 1)
       setChangeModal(true);
       setSaveChange(data)
       updateForm.setFieldsValue(data)

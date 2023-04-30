@@ -32,6 +32,19 @@ export default function CompletedOrders() {
   React.useEffect(
     (e) => {
       if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
+  React.useEffect(
+    (e) => {
+      if (auth) {
         axiosClient
           .get("/login/" + auth?.loggedInUser?._id)
           .then((response) => {
@@ -213,6 +226,7 @@ export default function CompletedOrders() {
         return (
               <Button
                 onClick={() => {
+                  setRefresh((f) => f + 1);
                   setSelectedOrderView(record);
                   axiosClient
           .get("/employees/" + record?.verifier?.employeeId)
@@ -277,6 +291,7 @@ export default function CompletedOrders() {
         open={selectedOrderView}
         onOk={() => setSelectedOrderView(null)}
         onCancel={() => {
+          setRefresh((f) => f + 1);
           setSelectedOrderView(null);
         }}
       >

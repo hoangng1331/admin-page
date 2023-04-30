@@ -49,6 +49,19 @@ export default function ShippingOrders() {
   React.useEffect(
     (e) => {
       if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
+  React.useEffect(
+    (e) => {
+      if (auth) {
         axiosClient
           .get("/login/" + auth?.loggedInUser?._id)
           .then((response) => {
@@ -231,6 +244,7 @@ export default function ShippingOrders() {
           <Space>
               <Button
                 onClick={() => {
+                  setRefresh((f) => f + 1)
                   setSelectedOrderView(record);
                   axiosClient
           .get("/employees/" + record?.verifier?.employeeId)
@@ -245,6 +259,7 @@ export default function ShippingOrders() {
               type="primary"
               ghost
               onClick={async (values) => {
+                setRefresh((f) => f + 1)
                   await axiosClient
                     .patch("/orders/" + record._id, {status: "Completed", shippedDate: new Date(), paymentStatus: "Đã thanh toán"})
                     .then((response) => {
@@ -259,6 +274,7 @@ export default function ShippingOrders() {
                 style={{ width: 800 }}
                 title="Khách hàng muốn hủy đơn?"
                 onConfirm={() => {
+                  setRefresh((f) => f + 1)
                   setDelectedOrder(record);
                   // Cancel
                   const id = record._id;
@@ -272,7 +288,7 @@ export default function ShippingOrders() {
                       message.error("Hủy bị lỗi!");
                     });
                 }}
-                onCancel={() => {}}
+                onCancel={() => {setRefresh((f) => f + 1)}}
                 okText="Đồng ý"
                 cancelText="Đóng"
               >
@@ -341,6 +357,7 @@ export default function ShippingOrders() {
         open={selectedOrderView}
         onOk={() => setSelectedOrderView(null)}
         onCancel={() => {
+          setRefresh((f) => f + 1)
           setSelectedOrderView(null);
         }}
       >

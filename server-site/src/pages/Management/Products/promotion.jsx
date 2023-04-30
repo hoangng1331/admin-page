@@ -3,16 +3,10 @@ import {
   Image,
   Table,
   Button,
-  Popconfirm,
-  Form,
-  Input,
   message,
   Space,
-  Modal,
-  Select,
   Upload,
   Descriptions,
-  Divider,
 } from "antd";
 import {
   CloseCircleFilled,
@@ -20,7 +14,6 @@ import {
 } from "@ant-design/icons";
 import {useAuthStore} from '../../../hooks/useAuthStore'
 import { axiosClient } from "../../../libraries/axiosClient";
-import moment from "moment";
 import numeral from "numeral";
 import { API_URL } from "../../../constants/URLS";
 
@@ -34,8 +27,21 @@ export default function Promotion() {
   const [file, setFile] = React.useState(null);
   const [colors, setColors] = React.useState([]);
   const [sizes, setSizes] = React.useState([]);
-  const { auth } = useAuthStore((state) => state);
+  const { auth, logout } = useAuthStore((state) => state);
   const [useRole, setUseRole] = React.useState("");
+  React.useEffect(
+    (e) => {
+      if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
   React.useEffect((e) => {
     if (auth){
     axiosClient.get("/login/" + auth?.loggedInUser?._id, e).then((response) => {
@@ -55,6 +61,7 @@ export default function Promotion() {
               <React.Fragment>
                 <Image
                   onClick={() => {
+                    setRefresh((f) => f + 1)
                     setSelectedRecord(record);
                     setIsPreview(true);
                   }}
@@ -153,6 +160,7 @@ export default function Promotion() {
           return (
             <Button
               onClick={() => {
+                setRefresh((f) => f + 1)
                 console.log("selectedRecord", record);
               }}
             >
@@ -173,6 +181,7 @@ export default function Promotion() {
             type="dashed"
             icon={<CloseCircleFilled />}
             onClick={() => {
+              setRefresh((f) => f + 1)
               axiosClient.patch("/products/"+record._id, {promotion: "No"}).then((response) => {
                 message.success("Đã gỡ sản phẩm khỏi danh sách yêu thích")
                 setRefresh((f) => f + 1);
@@ -185,6 +194,7 @@ export default function Promotion() {
               action={API_URL + "/upload/products/" + record._id}
               headers={{ authorization: "authorization-text" }}
               onChange={(info) => {
+                setRefresh((f) => f + 1)
                 if (info.file.status !== "uploading") {
                   console.log(info.file, info.fileList);
                 }

@@ -1,18 +1,8 @@
 import React from "react";
-import {
-  Table,
-  Button,
-  Modal,
-  Descriptions,
-  Divider,
-  Form,
-
-} from "antd";
+import { Table, Button, Modal, Descriptions, Divider, Form } from "antd";
 import { axiosClient } from "../../../libraries/axiosClient";
 import numeral from "numeral";
-import {
-  EyeOutlined,
-} from "@ant-design/icons";
+import { EyeOutlined } from "@ant-design/icons";
 import { useAuthStore } from "../../../hooks/useAuthStore";
 export default function CanceledOrders() {
   const [selectedOrder, setSelectedOrder] = React.useState(null);
@@ -29,6 +19,21 @@ export default function CanceledOrders() {
   const { auth, logout } = useAuthStore((state) => state);
   const [employeeLoginId, setEmployeeLoginId] = React.useState("");
   const [shipperId, setShipperId] = React.useState("");
+
+  React.useEffect(
+    (e) => {
+      if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
+
   React.useEffect(
     (e) => {
       if (auth) {
@@ -36,7 +41,7 @@ export default function CanceledOrders() {
           .get("/login/" + auth?.loggedInUser?._id)
           .then((response) => {
             setEmployeeLoginId(response.data._id);
-            setShipperId(response.data.employeeId)
+            setShipperId(response.data.employeeId);
           });
       }
     },
@@ -211,26 +216,32 @@ export default function CanceledOrders() {
       key: "actions",
       render: (text, record) => {
         return (
-              <Button
-                onClick={() => {
-                  setSelectedOrderView(record);
-                  axiosClient
-          .get("/employees/" + record?.verifier?.employeeId)
-          .then((response) => {
-            setVerifierName(response.data.fullName);
-          });
-                  setRefresh((f) => f + 1);
-                }}
-                icon={<EyeOutlined />}
-              />
+          <Button
+            onClick={() => {
+              setRefresh((f) => f + 1);
+              setSelectedOrderView(record);
+              axiosClient
+                .get("/employees/" + record?.verifier?.employeeId)
+                .then((response) => {
+                  setVerifierName(response.data.fullName);
+                });
+              setRefresh((f) => f + 1);
+            }}
+            icon={<EyeOutlined />}
+          />
         );
       },
     },
   ];
   React.useEffect(() => {
-    axiosClient.post("/orders/status&shipperId", {status: "Canceled", shipperId: shipperId}).then((response) => {
-      setOrders(response.data);
-    });
+    axiosClient
+      .post("/orders/status&shipperId", {
+        status: "Canceled",
+        shipperId: shipperId,
+      })
+      .then((response) => {
+        setOrders(response.data);
+      });
     axiosClient
       .get(`/orders/${selectedOrder?._id}/orderDetails`)
       .then((response) => {
@@ -265,7 +276,7 @@ export default function CanceledOrders() {
 
     fetchEmployees();
   }, [refresh, auth, shipperId]);
-  
+
   return (
     <div>
       <Table rowKey="_id" dataSource={orders} columns={columns} />
@@ -277,6 +288,7 @@ export default function CanceledOrders() {
         open={selectedOrderView}
         onOk={() => setSelectedOrderView(null)}
         onCancel={() => {
+          setRefresh((f) => f + 1)
           setSelectedOrderView(null);
         }}
       >
@@ -321,8 +333,8 @@ export default function CanceledOrders() {
                 <></>
               )}
               <Descriptions.Item label="Người xác nhận đơn">
-                  {selectedOrderView.verifier.fullName??verifierName}
-                </Descriptions.Item>
+                {selectedOrderView.verifier.fullName ?? verifierName}
+              </Descriptions.Item>
             </Descriptions>
             <Divider />
             <Table

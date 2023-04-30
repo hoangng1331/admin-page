@@ -1,18 +1,35 @@
-import { useState, useEffect } from "react";
+import React from "react";
 import { Form, DatePicker, Select, Button, Table } from "antd";
-import axios from "axios";
+import moment from "moment";
 import numeral from 'numeral';
 import { axiosClient } from '../libraries/axiosClient';
+import { useAuthStore } from "../hooks/useAuthStore";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const OrderList = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [employeeName, setEmployeeName] = useState();
-  const [shippers, setShippers] = useState();
-  useEffect(() => {
+  const { auth, logout } = useAuthStore((state) => state);
+  const [refresh, setRefresh] = React.useState(0);
+
+  React.useEffect(
+    (e) => {
+      if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
+  const [orders, setOrders] = React.useState([]);
+  const [loading, setLoading] = React.useState(false);
+  const [employeeName, setEmployeeName] = React.useState();
+  const [shippers, setShippers] = React.useState();
+  React.useEffect(() => {
     async function fetchEmployees() {
       try {
         const response = await axiosClient.get("/employees");
@@ -29,8 +46,9 @@ const OrderList = () => {
   }, []);
 
   const onFinish = async (values) => {
+    
     try {
-      console.log("ehehe", values)
+      setRefresh((f) => f + 1);
       setLoading(true);
       const response = await axiosClient.post("/orders/status&date&shipper", {
           shipperId: values.shipperId,
@@ -67,10 +85,13 @@ const OrderList = () => {
       align: "center",
     },
     {
-      title: "Hình thức thanh toán",
-      dataIndex: "paymentType",
+      title: "Ngày giao",
+      dataIndex: "shippedDate",
       align: "center",
-      key: "paymentType",
+      key: "shippedDate",
+      render: (text) => {
+        return <span>{moment(text).format("DD/MM/yyyy")}</span>
+      }
     },
     {
       title: "Trạng thái",

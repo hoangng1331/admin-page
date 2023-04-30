@@ -18,6 +18,7 @@ import {
 } from "../../../meta/OrderStatus";
 import { axiosClient } from "../../../libraries/axiosClient";
 import numeral from "numeral";
+import { useAuthStore } from "../../../hooks/useAuthStore";
 import { EyeOutlined } from "@ant-design/icons";
 const { Option } = Select;
 export default function SearchOrdersByStatus() {
@@ -25,6 +26,23 @@ export default function SearchOrdersByStatus() {
   const [orderDetail, setOrderDetail] = React.useState([]);
   const [verifierName, setVerifierName] = React.useState();
   const [isMultipleSelect, setIsMultipleSelect] = React.useState(false);
+
+  const { auth, logout } = useAuthStore((state) => state);
+  const [refresh, setRefresh] = React.useState(0);
+
+  React.useEffect(
+    (e) => {
+      if (auth) {
+        const refreshToken = window.localStorage.getItem("refreshToken");
+        if (refreshToken) {
+          axiosClient.post("/auth/refresh-token", {
+            refreshToken: refreshToken,
+          });
+        }
+      }
+    },
+    [auth, logout, refresh]
+  );
 
   const productColumnsView = [
     {
@@ -194,6 +212,7 @@ export default function SearchOrdersByStatus() {
         return (
           <Button
             onClick={() => {
+              setRefresh((f) => f + 1)
               setSelectedOrderView(record);
               axiosClient
                 .get("/employees/" + record?.verifier?.employeeId)
@@ -398,6 +417,7 @@ export default function SearchOrdersByStatus() {
         open={selectedOrderView}
         onOk={() => setSelectedOrderView(null)}
         onCancel={() => {
+          setRefresh((f) => f + 1)
           setSelectedOrderView(null);
         }}
       >
