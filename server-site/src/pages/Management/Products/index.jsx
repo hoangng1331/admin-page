@@ -35,7 +35,7 @@ export default function Products() {
   const [selectedRecord, setSelectedRecord] = React.useState(null);
   const [refresh, setRefresh] = React.useState(0);
   const [editFormVisible, setEditFormVisible] = React.useState(false);
-  const [file, setFile] = React.useState(null);
+  const [fileList, setFileList] = React.useState([]);
   const [colors, setColors] = React.useState([]);
   const [sizes, setSizes] = React.useState([]);
   const [isModalVisible, setIsModalVisible] = React.useState(false);
@@ -73,6 +73,7 @@ export default function Products() {
       key: "imageUrl",
       dataIndex: "imageUrl",
       render: (text, record) => {
+        console.log(text, record, "kajskskjsa")
         return (
           <div>
             {text && (
@@ -87,7 +88,7 @@ export default function Products() {
                     visible: false,
                   }}
                   width={60}
-                  src={`${API_URL}${text}`}
+                  src={`${API_URL}${text[0]}`}
                 />
                 <div
                   style={{
@@ -100,10 +101,10 @@ export default function Products() {
                       onVisibleChange: (vis) => setIsPreview(vis),
                     }}
                   >
-                    <Image src={`${API_URL}${text}`} />
+                    <Image src={`${API_URL}${text[0]}`} />
                     {record &&
-                      record.images &&
-                      record.images.map((image) => {
+                      record.imageUrl &&
+                      record.imageUrl.map((image) => {
                         return <Image key={image} src={`${API_URL}${image}`} />;
                       })}
                   </Image.PreviewGroup>
@@ -163,25 +164,9 @@ export default function Products() {
       title: "Tồn kho",
       dataIndex: "stock",
       key: "stock",
+      align: "right",
       render: (text) => {
         return <span>{numeral(text).format("0,0")}</span>;
-      },
-    },
-    {
-      title: "Hình chi tiết",
-      dataIndex: "images",
-      key: "images",
-      render: (text, record) => {
-        return (
-          <Button
-            onClick={() => {
-              setRefresh((f) => f + 1);
-              console.log("selectedRecord", record);
-            }}
-          >
-            Xem
-          </Button>
-        );
       },
     },
     {
@@ -244,30 +229,27 @@ export default function Products() {
                     setRefresh((f) => f + 1);
                   }}
                 />
-                <Upload
-                  showUploadList={false}
-                  multiple
-                  name="file"
-                  action={API_URL + "/upload/products/" + record._id}
-                  headers={{ authorization: "authorization-text" }}
-                  onChange={(info) => {
-                    if (info.file.status !== "uploading") {
-                      console.log(info.file, info.fileList);
-                    }
+               <Upload
+              showUploadList={false}
+              name='files[]'
+              action={API_URL + '/upload/products/' + record._id + "/images"}
+              headers={{ authorization: 'authorization-text' }}
+              onChange={(info) => {
+                if (info.file.status !== 'uploading') {
+                  console.log(info.file, info.fileList);
+                }
 
-                    if (info.file.status === "done") {
-                      message.success(
-                        `${info.file.name} file uploaded successfully`
-                      );
+                if (info.file.status === 'done') {
+                  message.success(`${info.file.name} file uploaded successfully`);
 
-                      setRefresh((f) => f + 1);
-                    } else if (info.file.status === "error") {
-                      message.error(`${info.file.name} file upload failed.`);
-                    }
-                  }}
-                >
-                  <Button icon={<UploadOutlined />} />
-                </Upload>
+                  setRefresh((f) => f + 1);
+                } else if (info.file.status === 'error') {
+                  message.error(`${info.file.name} file upload failed.`);
+                }
+              }}
+            >
+              <Button icon={<UploadOutlined />} />
+            </Upload>
               </Space>
             ) : (
               <></>
@@ -277,6 +259,20 @@ export default function Products() {
       },
     },
   ];
+
+  const props = {
+      onRemove: (file) => {
+      const index = fileList.indexOf(file);
+      const newFileList = fileList.slice();
+      newFileList.splice(index, 1);
+      setFileList(newFileList);
+    },
+    beforeUpload: (file) => {
+      setFileList([...fileList, file]);
+      return false;
+    },
+    fileList,
+  };
 
   const fetchColors = async () => {
     try {
@@ -312,32 +308,23 @@ export default function Products() {
     axiosClient
       .post("/products", values)
       .then((response) => {
+        console.log("kjaskj", response)
+
         // UPLOAD FILES
         const { _id } = response.data;
         const formData = new FormData();
-
-        // Add all files to form data
-        for (let i = 0; i < file.length; i++) {
-          formData.append("files", file[i]);
-        }
-        // Upload all files simultaneously
-        Promise.all([axios.post(API_URL + "/upload/products/" + _id, formData)])
-          .then((responses) => {
-            // Check if all files were uploaded successfully
-            const uploadErrors = responses.filter((response) => {
-              return response.status !== 200;
-            });
-
-            if (uploadErrors.length === 0) {
-              message.success("Thêm mới thành công!");
-              createForm.resetFields();
-              setRefresh((f) => f + 1);
-            } else {
-              message.error("Upload file bị lỗi!");
-            }
+    fileList.forEach((file) => {
+      formData.append('files[]', file);
+    });
+        axios
+          .post(API_URL + "/upload/products/" + _id, formData)
+          .then((respose) => {
+            message.success("Thêm mới thành công!");
+            createForm.resetFields();
+            setFileList([])
+            setRefresh((f) => f + 1);
           })
           .catch((err) => {
-            console.log(err);
             message.error("Upload file bị lỗi!");
           });
       })
@@ -374,18 +361,6 @@ export default function Products() {
 
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
-  const uploadButton = (
-    <div>
-      <PlusOutlined />
-      <div
-        style={{
-          marginTop: 8,
-        }}
-      >
-        Upload
-      </div>
-    </div>
-  );
   return (
     <div>
       {useRole === "Admin" && (
@@ -691,17 +666,12 @@ export default function Products() {
               </>
             )}
           </Form.List>
-          <Form.Item label="Hình minh họa" name="file">
-            <Upload
-              showUploadList={true}
-              multiple
-              listType="picture-card"
-              beforeUpload={(file) => {
-                setFile(file);
-                return false;
-              }}
+          <Form.Item label="Hình minh họa" name="files">
+            <Upload 
+            {...props}
             >
-              {file?.length >= 8 ? null : uploadButton}
+             
+             <Button icon={<PlusOutlined/>}>Tải lên</Button>
             </Upload>
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
@@ -1051,6 +1021,7 @@ export default function Products() {
           </Form.List>
         </Form>
       </Modal>
+     
     </div>
   );
 }
