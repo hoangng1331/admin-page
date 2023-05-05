@@ -37,6 +37,8 @@ export default function Products() {
   const [editFormVisible, setEditFormVisible] = React.useState(false);
   const [fileList, setFileList] = React.useState([]);
   const [colors, setColors] = React.useState([]);
+  const [chosenColors, setChosenColors] = React.useState([]);
+  const [chosenSizes, setChosenSizes] = React.useState([]);
   const [sizes, setSizes] = React.useState([]);
   const [isModalVisible, setIsModalVisible] = React.useState(false);
   const { auth, logout } = useAuthStore((state) => state);
@@ -73,7 +75,6 @@ export default function Products() {
       key: "imageUrl",
       dataIndex: "imageUrl",
       render: (text, record) => {
-        console.log(text, record, "kajskskjsa")
         return (
           <div>
             {text && (
@@ -101,7 +102,6 @@ export default function Products() {
                       onVisibleChange: (vis) => setIsPreview(vis),
                     }}
                   >
-                    <Image src={`${API_URL}${text[0]}`} />
                     {record &&
                       record.imageUrl &&
                       record.imageUrl.map((image) => {
@@ -229,27 +229,31 @@ export default function Products() {
                     setRefresh((f) => f + 1);
                   }}
                 />
-               <Upload
-              showUploadList={false}
-              name='files[]'
-              action={API_URL + '/upload/products/' + record._id + "/images"}
-              headers={{ authorization: 'authorization-text' }}
-              onChange={(info) => {
-                if (info.file.status !== 'uploading') {
-                  console.log(info.file, info.fileList);
-                }
+                <Upload
+                  showUploadList={false}
+                  name="files[]"
+                  action={
+                    API_URL + "/upload/products/" + record._id + "/images"
+                  }
+                  headers={{ authorization: "authorization-text" }}
+                  onChange={(info) => {
+                    if (info.file.status !== "uploading") {
+                      console.log(info.file, info.fileList);
+                    }
 
-                if (info.file.status === 'done') {
-                  message.success(`${info.file.name} file uploaded successfully`);
+                    if (info.file.status === "done") {
+                      message.success(
+                        `${info.file.name} file uploaded successfully`
+                      );
 
-                  setRefresh((f) => f + 1);
-                } else if (info.file.status === 'error') {
-                  message.error(`${info.file.name} file upload failed.`);
-                }
-              }}
-            >
-              <Button icon={<UploadOutlined />} />
-            </Upload>
+                      setRefresh((f) => f + 1);
+                    } else if (info.file.status === "error") {
+                      message.error(`${info.file.name} file upload failed.`);
+                    }
+                  }}
+                >
+                  <Button icon={<UploadOutlined />} />
+                </Upload>
               </Space>
             ) : (
               <></>
@@ -261,7 +265,7 @@ export default function Products() {
   ];
 
   const props = {
-      onRemove: (file) => {
+    onRemove: (file) => {
       const index = fileList.indexOf(file);
       const newFileList = fileList.slice();
       newFileList.splice(index, 1);
@@ -308,20 +312,20 @@ export default function Products() {
     axiosClient
       .post("/products", values)
       .then((response) => {
-        console.log("kjaskj", response)
+        console.log("kjaskj", response);
 
         // UPLOAD FILES
         const { _id } = response.data;
         const formData = new FormData();
-    fileList.forEach((file) => {
-      formData.append('files[]', file);
-    });
+        fileList.forEach((file) => {
+          formData.append("files[]", file);
+        });
         axios
           .post(API_URL + "/upload/products/" + _id, formData)
           .then((respose) => {
             message.success("Thêm mới thành công!");
             createForm.resetFields();
-            setFileList([])
+            setFileList([]);
             setRefresh((f) => f + 1);
           })
           .catch((err) => {
@@ -361,6 +365,7 @@ export default function Products() {
 
   const [createForm] = Form.useForm();
   const [updateForm] = Form.useForm();
+
   return (
     <div>
       {useRole === "Admin" && (
@@ -475,6 +480,34 @@ export default function Products() {
                         showSearch
                         optionFilterProp="children"
                         value={colors}
+                        onChange={(colorId) => {
+                          const selectedColor = colors.find(
+                            (color) => color._id === colorId
+                          );
+                          const existingColorIndex = chosenColors.findIndex(
+                            (c) => c.id === field.key
+                          );
+                          if (existingColorIndex === -1) {
+                            setChosenColors([
+                              ...chosenColors,
+                              {
+                                id: field.key,
+                                colorId: colorId,
+                                name: selectedColor.name,
+                                hexcode: selectedColor.hexcode[0].hex,
+                              },
+                            ]);
+                          } else {
+                            const newChosenColors = [...chosenColors];
+                            newChosenColors[existingColorIndex] = {
+                              id: field.key,
+                              colorId: colorId,
+                              name: selectedColor.name,
+                              hexcode: selectedColor.hexcode[0].hex,
+                            };
+                            setChosenColors(newChosenColors);
+                          }
+                        }}
                         style={{
                           width: 300,
                         }}
@@ -504,20 +537,27 @@ export default function Products() {
                         virtual
                         optionHeight={20}
                       >
-                        {colors.map((color, index) => (
-                          <Select.Option key={color._id} value={color._id}>
-                            <span
-                              style={{
-                                backgroundColor: color.hexcode[0].hex,
-                                display: "inline-block",
-                                width: "10px",
-                                height: "10px",
-                                marginRight: "3px",
-                              }}
-                            />
-                            {color.name}
-                          </Select.Option>
-                        ))}
+                        {colors
+                          .filter(
+                            (color) =>
+                              chosenColors.findIndex(
+                                (c) => c.colorId === color._id
+                              ) === -1
+                          )
+                          .map((color, index) => (
+                            <Select.Option key={color._id} value={color._id}>
+                              <span
+                                style={{
+                                  backgroundColor: color.hexcode[0].hex,
+                                  display: "inline-block",
+                                  width: "10px",
+                                  height: "10px",
+                                  marginRight: "3px",
+                                }}
+                              />
+                              {color.name}
+                            </Select.Option>
+                          ))}
                       </Select>
                     </Form.Item>
                     <Modal
@@ -581,15 +621,49 @@ export default function Products() {
                                   ]}
                                 >
                                   <Select
+                                    onChange={(sizeId) => {
+                                      const selectedSize = sizes.find(
+                                        (size) => size._id === sizeId
+                                      );
+                                      const existingSizeIndex =
+                                        chosenSizes.findIndex(
+                                          (c) => c.id === field.key
+                                        );
+                                      if (existingSizeIndex === -1) {
+                                        setChosenSizes([
+                                          ...chosenSizes,
+                                          {
+                                            id: field.key,
+                                            sizeId: sizeId,
+                                            size: selectedSize.size,
+                                          },
+                                        ]);
+                                      } else {
+                                        const newChosenSizes = [...chosenSizes];
+                                        newChosenSizes[existingSizeIndex] = {
+                                          id: field.key,
+                                          sizeId: sizeId,
+                                          size: selectedSize.size,
+                                        };
+                                        setChosenSizes(newChosenSizes);
+                                      }
+                                    }}
                                     style={{ width: 150 }}
                                     options={
                                       sizes &&
-                                      sizes.map((c) => {
-                                        return {
-                                          value: c._id,
-                                          label: c.size,
-                                        };
-                                      })
+                                      sizes
+                                        .filter(
+                                          (size) =>
+                                            chosenSizes.findIndex(
+                                              (c) => c.sizeId === size._id
+                                            ) === -1
+                                        )
+                                        .map((c) => {
+                                          return {
+                                            value: c._id,
+                                            label: c.size,
+                                          };
+                                        })
                                     }
                                   />
                                 </Form.Item>
@@ -667,11 +741,8 @@ export default function Products() {
             )}
           </Form.List>
           <Form.Item label="Hình minh họa" name="files">
-            <Upload 
-            {...props}
-            >
-             
-             <Button icon={<PlusOutlined/>}>Tải lên</Button>
+            <Upload {...props}>
+              <Button icon={<PlusOutlined />}>Tải lên</Button>
             </Upload>
           </Form.Item>
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
@@ -1021,7 +1092,6 @@ export default function Products() {
           </Form.List>
         </Form>
       </Modal>
-     
     </div>
   );
 }
