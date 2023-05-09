@@ -28,7 +28,7 @@ import numeral from "numeral";
 import { API_URL } from "../../../constants/URLS";
 import ColorForm from "../../Colors";
 import axios from "axios";
-export default function Products() {
+export default function Variants() {
   const [isPreview, setIsPreview] = React.useState(false);
   const [categories, setCategories] = React.useState([]);
   const [products, setProducts] = React.useState([]);
@@ -41,7 +41,6 @@ export default function Products() {
   const [chosenSizes, setChosenSizes] = React.useState([]);
   const [sizes, setSizes] = React.useState([]);
   const [isModalVisible, setIsModalVisible] = React.useState(false);
-  const [addVariants, setAddVariants] = React.useState(false);
   const { auth, logout } = useAuthStore((state) => state);
   const [useRole, setUseRole] = React.useState("");
   const [viewCategory, setViewCategory] = React.useState(null);
@@ -380,135 +379,17 @@ export default function Products() {
           onFinishFailed={onFinishFailed}
           autoComplete="on"
         >
-          <Form.Item
-            label="Danh mục sản phẩm"
-            name="categoryId"
-            rules={[{ required: true, message: "Hãy chọn loại sản phẩm!" }]}
-            hasFeedback
-          >
-            <Select
-              showSearch
-              optionFilterProp="children"
-              value={colors}
-              dropdownRender={(menu) => (
-                <>
-                  {menu}
-                  <Divider
-                    style={{
-                      margin: "4px 0",
-                    }}
-                  />
-                  <Space
-                    style={{
-                      padding: "0 4px 2px",
-                    }}
-                  >
-                    <Input
-                      placeholder="Nhập tên danh mục mới"
-                      value={newCategory}
-                      onChange={onNewCategory}
-                    />
-                    <Button
-                      type="text"
-                      icon={<PlusOutlined />}
-                      onClick={() => {
-                        setRefresh((f) => f + 1);
-                        axiosClient
-                          .post("/categories", { name: newCategory })
-                          .then((response) => {
-                            message.success(
-                              "Đã thêm " +
-                                newCategory +
-                                " vào danh mục sản phẩm"
-                            );
-                            setRefresh((f) => f + 1);
-                            setNewCategory(null);
-                          })
-                          .catch((err) => {
-                            message.error(
-                              "Thêm thất bại, danh mục này đã tồn tại!"
-                            );
-                          });
-                        setRefresh((f) => f + 1);
-                      }}
-                    >
-                      Thêm mới
-                    </Button>
-                  </Space>
-                </>
-              )}
-              virtual
-              optionHeight={20}
-            >
-              {categories.map((category, index) => (
-                <Select.Option key={category._id} value={category._id}>
-                  {category.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="Tên sản phẩm"
-            name="name"
-            rules={[{ required: true, message: "Hãy nhập tên sản phẩm!" }]}
-            hasFeedback
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item label="Mô tả sản phẩm" name="description" hasFeedback>
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item
-            label="Hướng dẫn bảo quản"
-            name="preserveGuide"
-            hasFeedback
-          >
-            <Input.TextArea />
-          </Form.Item>
           <Form.List name="variants">
-            {(fields, { add, remove }) => (
               <>
-                {fields.map((field) => (
-                  <div key={field.key}>
                     <Form.Item
                       label="Màu"
-                      name={[field.name, "colorId"]}
-                      fieldKey={[field.fieldKey, "colorId"]}
+                      name="colorId"
                       rules={[{ required: true, message: "Hãy chọn một màu!" }]}
                     >
                       <Select
                         showSearch
                         optionFilterProp="children"
                         value={colors}
-                        onChange={(colorId) => {
-                          const selectedColor = colors.find(
-                            (color) => color._id === colorId
-                          );
-                          const existingColorIndex = chosenColors.findIndex(
-                            (c) => c.id === field.key
-                          );
-                          if (existingColorIndex === -1) {
-                            setChosenColors([
-                              ...chosenColors,
-                              {
-                                id: field.key,
-                                colorId: colorId,
-                                name: selectedColor.name,
-                                hexcode: selectedColor.hexcode[0].hex,
-                              },
-                            ]);
-                          } else {
-                            const newChosenColors = [...chosenColors];
-                            newChosenColors[existingColorIndex] = {
-                              id: field.key,
-                              colorId: colorId,
-                              name: selectedColor.name,
-                              hexcode: selectedColor.hexcode[0].hex,
-                            };
-                            setChosenColors(newChosenColors);
-                          }
-                        }}
                         style={{
                           width: 300,
                         }}
@@ -539,12 +420,6 @@ export default function Products() {
                         optionHeight={20}
                       >
                         {colors
-                          .filter(
-                            (color) =>
-                              chosenColors.findIndex(
-                                (c) => c.colorId === color._id
-                              ) === -1
-                          )
                           .map((color, index) => (
                             <Select.Option key={color._id} value={color._id}>
                               <span
@@ -575,22 +450,20 @@ export default function Products() {
                       <ColorForm />
                     </Modal>
                     <Form.Item
-                      label="Price"
-                      name={[field.name, "price"]}
+                      label="Giá"
+                      name="price"
                       rules={[
                         {
                           required: true,
                           message: "Hãy nhập giá bán!",
                         },
                       ]}
-                      fieldKey={[field.fieldKey, "price"]}
                     >
                       <Input type="number" min={0} style={{ width: 150 }} />
                     </Form.Item>
                     <Form.Item
                       label="Discount"
-                      name={[field.name, "discount"]}
-                      fieldKey={[field.fieldKey, "discount"]}
+                      name="discount"
                     >
                       <Input
                         type="number"
@@ -602,10 +475,9 @@ export default function Products() {
                     </Form.Item>
                     <Form.Item
                       label="Kích cỡ và số lượng"
-                      name={[field.name, "sizes"]}
-                      fieldKey={[field.fieldKey, "sizes"]}
+                      name="sizes"
                     >
-                      <Form.List name={[field.name, "sizes"]}>
+                      <Form.List name="sizes">
                         {(sizeFields, { add: addSize, remove: removeSize }) => (
                           <>
                             {sizeFields.map((sizeField) => (
@@ -714,7 +586,7 @@ export default function Products() {
                       </Form.List>
                     </Form.Item>
 
-                    <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                    {/* <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                       <Button
                         onClick={() => {
                           setRefresh((f) => f + 1);
@@ -724,10 +596,9 @@ export default function Products() {
                       >
                         Xóa màu
                       </Button>
-                    </Form.Item>
-                  </div>
-                ))}
-                <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                    </Form.Item> */}
+
+                {/* <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                   <Button
                     onClick={() => {
                       setRefresh((f) => f + 1);
@@ -737,9 +608,9 @@ export default function Products() {
                   >
                     Thêm màu
                   </Button>
-                </Form.Item>
+                </Form.Item> */}
               </>
-            )}
+
           </Form.List>
           <Form.Item label="Hình minh họa" name="files">
             <Upload {...props}>
@@ -753,37 +624,7 @@ export default function Products() {
           </Form.Item>
         </Form>
       )}
-      <Form.Item
-        label="Danh mục sản phẩm"
-        rules={[{ required: true, message: "Hãy chọn loại sản phẩm!" }]}
-        hasFeedback
-      >
-        <Select
-          style={{
-            width: 300,
-          }}
-          onChange={(value) => {
-            setViewCategory(value);
-          }}
-          options={
-            categories &&
-            categories.map((c) => {
-              return {
-                value: c._id,
-                label: c.name,
-              };
-            })
-          }
-        />
-      </Form.Item>
-      <Button
-        onClick={() => {
-          setRefresh((f) => f + 1);
-          setViewCategory(null);
-        }}
-      >
-        Xóa lọc
-      </Button>
+      
       <Table
         rowKey="_id"
         dataSource={products}
@@ -829,61 +670,18 @@ export default function Products() {
           onFinishFailed={onUpdateFinishFailed}
           autoComplete="on"
         >
-          <Form.Item
-            label="Danh mục sản phẩm"
-            name="categoryId"
-            rules={[{ required: true, message: "Hãy chọn loại sản phẩm!" }]}
-            hasFeedback
-          >
-            <Select
-              disabled={useRole !== "Admin"}
-              options={
-                categories &&
-                categories.map((c) => {
-                  return {
-                    value: c._id,
-                    label: c.name,
-                  };
-                })
-              }
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="Tên sản phẩm"
-            name="name"
-            rules={[{ required: true, message: "Hãy nhập tên sản phẩm!" }]}
-            hasFeedback
-          >
-            <Input readOnly={useRole !== "Admin"} />
-          </Form.Item>
-
-          <Form.Item label="Mô tả sản phẩm" name="description" hasFeedback>
-            <Input.TextArea readOnly={useRole !== "Admin"} />
-          </Form.Item>
-          <Form.Item
-            label="Hướng dẫn bảo quản"
-            name="preserveGuide"
-            hasFeedback
-          >
-            <Input.TextArea readOnly={useRole !== "Admin"} />
-          </Form.Item>
+          
           <Form.List name="variants">
-            {(fields, { add, remove }) => (
               <>
-                {fields.map((field) => (
-                  <div key={field.key}>
                     <Form.Item
                       label="Màu"
-                      name={[field.name, "colorId"]}
-                      fieldKey={[field.fieldKey, "colorId"]}
+                      name="colorId"
                       rules={[{ required: true, message: "Hãy chọn một màu!" }]}
                     >
                       <Select
-                        disabled={useRole !== "Admin"}
                         showSearch
-                        value={colors}
                         optionFilterProp="children"
+                        value={colors}
                         style={{
                           width: 300,
                         }}
@@ -913,28 +711,21 @@ export default function Products() {
                         virtual
                         optionHeight={20}
                       >
-                        {colors.map((color, index) => (
-                          <Select.Option key={color._id} value={color._id}>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                              }}
-                            >
+                        {colors
+                          .map((color, index) => (
+                            <Select.Option key={color._id} value={color._id}>
                               <span
                                 style={{
                                   backgroundColor: color.hexcode[0].hex,
                                   display: "inline-block",
-                                  width: "20px",
-                                  height: "20px",
+                                  width: "10px",
+                                  height: "10px",
+                                  marginRight: "3px",
                                 }}
-                              ></span>
-                              <span style={{ marginLeft: "8px" }}>
-                                {colors[index].name}
-                              </span>
-                            </div>
-                          </Select.Option>
-                        ))}
+                              />
+                              {color.name}
+                            </Select.Option>
+                          ))}
                       </Select>
                     </Form.Item>
                     <Modal
@@ -943,32 +734,28 @@ export default function Products() {
                         setRefresh((f) => f + 1);
                         setIsModalVisible(false);
                       }}
-                      footer={null}
+                      onOk={() => {
+                        setRefresh((f) => f + 1);
+                        setIsModalVisible(false);
+                      }}
                     >
                       <ColorForm />
                     </Modal>
                     <Form.Item
-                      label="Price"
-                      name={[field.name, "price"]}
+                      label="Giá"
+                      name="price"
                       rules={[
                         {
                           required: true,
                           message: "Hãy nhập giá bán!",
                         },
                       ]}
-                      fieldKey={[field.fieldKey, "price"]}
                     >
-                      <Input
-                        type="number"
-                        min={0}
-                        style={{ width: 150 }}
-                        readOnly={useRole !== "Admin"}
-                      />
+                      <Input type="number" min={0} style={{ width: 150 }} />
                     </Form.Item>
                     <Form.Item
                       label="Discount"
-                      name={[field.name, "discount"]}
-                      fieldKey={[field.fieldKey, "discount"]}
+                      name="discount"
                     >
                       <Input
                         type="number"
@@ -976,15 +763,13 @@ export default function Products() {
                         min={0}
                         max={100}
                         style={{ width: 100 }}
-                        readOnly={useRole !== "Admin" && useRole !== "Quản lý"}
                       />
                     </Form.Item>
                     <Form.Item
                       label="Kích cỡ và số lượng"
-                      name={[field.name, "sizes"]}
-                      fieldKey={[field.fieldKey, "sizes"]}
+                      name="sizes"
                     >
-                      <Form.List name={[field.name, "sizes"]}>
+                      <Form.List name="sizes">
                         {(sizeFields, { add: addSize, remove: removeSize }) => (
                           <>
                             {sizeFields.map((sizeField) => (
@@ -1001,16 +786,49 @@ export default function Products() {
                                   ]}
                                 >
                                   <Select
-                                    disabled={useRole !== "Admin"}
+                                    onChange={(sizeId) => {
+                                      const selectedSize = sizes.find(
+                                        (size) => size._id === sizeId
+                                      );
+                                      const existingSizeIndex =
+                                        chosenSizes.findIndex(
+                                          (c) => c.id === sizeField.key
+                                        );
+                                      if (existingSizeIndex === -1) {
+                                        setChosenSizes([
+                                          ...chosenSizes,
+                                          {
+                                            id: sizeField.key,
+                                            sizeId: sizeId,
+                                            size: selectedSize.size,
+                                          },
+                                        ]);
+                                      } else {
+                                        const newChosenSizes = [...chosenSizes];
+                                        newChosenSizes[existingSizeIndex] = {
+                                          id: sizeField.key,
+                                          sizeId: sizeId,
+                                          size: selectedSize.size,
+                                        };
+                                        setChosenSizes(newChosenSizes);
+                                      }
+                                    }}
                                     style={{ width: 150 }}
                                     options={
                                       sizes &&
-                                      sizes.map((c) => {
-                                        return {
-                                          value: c._id,
-                                          label: c.size,
-                                        };
-                                      })
+                                      sizes
+                                        .filter(
+                                          (size) =>
+                                            chosenSizes.findIndex(
+                                              (c) => c.sizeId === size._id
+                                            ) === -1
+                                        )
+                                        .map((c) => {
+                                          return {
+                                            value: c._id,
+                                            label: c.size,
+                                          };
+                                        })
                                     }
                                   />
                                 </Form.Item>
@@ -1033,7 +851,6 @@ export default function Products() {
                                 </Form.Item>
                                 <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                                   <Button
-                                    disabled={useRole !== "Admin"}
                                     onClick={() => {
                                       setRefresh((f) => f + 1);
                                       removeSize(sizeField.name);
@@ -1047,7 +864,6 @@ export default function Products() {
                             ))}
                             <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                               <Button
-                                disabled={useRole !== "Admin"}
                                 onClick={() => {
                                   setRefresh((f) => f + 1);
                                   addSize();
@@ -1062,9 +878,8 @@ export default function Products() {
                       </Form.List>
                     </Form.Item>
 
-                    <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                    {/* <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                       <Button
-                        disabled={useRole !== "Admin"}
                         onClick={() => {
                           setRefresh((f) => f + 1);
                           remove(field.name);
@@ -1073,12 +888,10 @@ export default function Products() {
                       >
                         Xóa màu
                       </Button>
-                    </Form.Item>
-                  </div>
-                ))}
-                <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                    </Form.Item> */}
+
+                {/* <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
                   <Button
-                    disabled={useRole !== "Admin"}
                     onClick={() => {
                       setRefresh((f) => f + 1);
                       add();
@@ -1087,9 +900,9 @@ export default function Products() {
                   >
                     Thêm màu
                   </Button>
-                </Form.Item>
+                </Form.Item> */}
               </>
-            )}
+
           </Form.List>
         </Form>
       </Modal>

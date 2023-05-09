@@ -39,6 +39,7 @@ const { Header, Footer, Sider, Content } = Layout;
 function App() {
   const { auth, logout } = useAuthStore((state) => state);
   const userRole = auth?.loggedInUser?.role;
+  
   const [name, setName] = React.useState("");
   const [key, setKey] = React.useState(Date.now());
   React.useEffect(
@@ -62,7 +63,7 @@ function App() {
               logout();
               message.error("Tài khoản bị vô hiệu hóa, bạn bị cưỡng chế đăng xuất!");
             }
-            setKey(Date.now());
+            // setKey(Date.now());
           });
       }
     },
@@ -127,14 +128,12 @@ function App() {
               <Header style={{ backgroundColor: "blue" }}>
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <h1 style={{ color: "white" }}>
-                    {" "}
-                    D.CHIC Online - {auth?.loggedInUser?.role}
-                  </h1>
+                > <div style={{ display: "flex", color: "white" }}>
+                    <strong>D.CHIC Online - {auth?.loggedInUser?.role}</strong>
+                </div>                  
                   <div style={{ display: "flex", color: "white" }}>
                     <strong>{name}</strong>
-                    <span style={{ marginInline: 8 }}>|</span>
+                    <span style={{ marginInline:   8 }}>|</span>
                     <strong
                       style={{ cursor: "pointer" }}
                       onClick={() => {

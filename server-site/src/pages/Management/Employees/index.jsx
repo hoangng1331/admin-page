@@ -197,7 +197,7 @@ export default function Employees() {
     });
   }, [refresh]);
 
-  const onFinish = (values) => {
+   const onFinish = (values) => {
     axiosClient
       .post("/employees", values)
       .then((response) => {
@@ -209,7 +209,7 @@ export default function Employees() {
         message.error("Thêm mới bị lỗi!");
       });
     setRefresh((f) => f + 1);
-  };
+   };
   const onFinishFailed = (errors) => {
     console.log("🐣", errors);
   };
