@@ -14,6 +14,7 @@ import {
   InputNumber,
   Input,
   Checkbox,
+  Drawer,
 } from "antd";
 import { axiosClient } from "../../../libraries/axiosClient";
 import numeral from "numeral";
@@ -183,7 +184,7 @@ export default function Orders() {
                 setSelectEditRecord(record);
                 axiosClient
                   .get(
-                    `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}`
+                    `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}/order`
                   )
                   .then((response) => {
                     setMaxQuantity(response.data);
@@ -197,10 +198,10 @@ export default function Orders() {
               onClick={async () => {
                 setRefresh((f) => f + 1)
                 const remainQuantity = await axiosClient.get(
-                  `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`
+                  `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}/order`
                 );
                 axiosClient.patch(
-                  `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}`,
+                  `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}/order`,
                   {
                     quantity: remainQuantity.data.quantity + record.quantity,
                   }
@@ -434,10 +435,10 @@ export default function Orders() {
                   const id = record._id;
                   delectedOrder.orderDetails.forEach(async (orderDetail) => {
                     const remainQuantity = await axiosClient.get(
-                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`
+                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}/order`
                     );
                     axiosClient.patch(
-                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`,
+                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}/order`,
                       {
                         quantity:
                           remainQuantity.data.quantity + orderDetail.quantity,
@@ -542,10 +543,10 @@ export default function Orders() {
                       delectedOrder.orderDetails.forEach(
                         async (orderDetail) => {
                           const remainQuantity = await axiosClient.get(
-                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`
+                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}/order`
                           );
                           axiosClient.patch(
-                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`,
+                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}/order`,
                             {
                               quantity:
                                 remainQuantity.data.quantity +
@@ -608,7 +609,7 @@ export default function Orders() {
     });
     axiosClient
       .get(
-        `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}`
+        `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}/order`
       )
       .then((response) => {
         setMaxQuantity(response.data.quantity);
@@ -643,7 +644,7 @@ export default function Orders() {
           setRefresh((f) => f + 1);
           axiosClient
             .patch(
-              `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}`,
+              `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}/order`,
               {
                 quantity: maxQuantity - quanDiff,
               }
@@ -746,7 +747,7 @@ export default function Orders() {
               "/variants/" +
               values.colorId +
               "/sizes/" +
-              values.sizeId
+              values.sizeId + "/order"
           );
           axiosClient
             .patch(
@@ -755,7 +756,7 @@ export default function Orders() {
                 "/variants/" +
                 values.colorId +
                 "/sizes/" +
-                values.sizeId,
+                values.sizeId +"/order",
               { quantity: remainQuantity.data.quantity - values.quantity }
             )
             .then((response) => {
@@ -1080,13 +1081,12 @@ export default function Orders() {
 
       <Table rowKey="_id" dataSource={orders} columns={columns} />
 
-      <Modal
-        centered
-        width={"90%"}
+      <Drawer
+        placement="bottom"
+        height={"90%"}
         title="Chi tiết đơn hàng"
         open={selectedOrderView}
-        onOk={() => setSelectedOrderView(null)}
-        onCancel={() => {
+        onClose={() => {
           setRefresh((f) => f + 1)
           setSelectedOrderView(null);
         }}
@@ -1177,7 +1177,7 @@ export default function Orders() {
             />
           </div>
         )}
-      </Modal>
+      </Drawer>
     </div>
   );
 }

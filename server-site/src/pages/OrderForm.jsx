@@ -355,10 +355,10 @@ const OrderForm = () => {
           .then((response) => {
             orderItems.forEach(async (orderItem) => {
               const remainQuantity = await axiosClient.get(
-                `/products/${orderItem.productId}/variants/${orderItem.colorId}/sizes/${orderItem.sizeId}`
+                `/products/${orderItem.productId}/variants/${orderItem.colorId}/sizes/${orderItem.sizeId}/order`
               );
               axiosClient.patch(
-                `/products/${orderItem.productId}/variants/${orderItem.colorId}/sizes/${orderItem.sizeId}`,
+                `/products/${orderItem.productId}/variants/${orderItem.colorId}/sizes/${orderItem.sizeId}/order`,
                 {
                   quantity: remainQuantity.data.quantity - orderItem.quantity,
                 }

@@ -301,7 +301,7 @@ export default function ConfirmedOrders() {
     });
     axiosClient
       .get(
-        `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}`
+        `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}/order`
       )
       .then((response) => {
         setMaxQuantity(response.data.quantity);

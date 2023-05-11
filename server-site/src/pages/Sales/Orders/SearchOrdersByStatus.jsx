@@ -6,9 +6,9 @@ import {
   message,
   Select,
   Descriptions,
-  Modal,
   Divider,
-  Switch
+  Switch,
+  Drawer
 } from "antd";
 import {
   DeliveryArea,
@@ -410,16 +410,15 @@ export default function SearchOrdersByStatus() {
         </Form.Item>
       </Form>
       <Table rowKey="_id" dataSource={orders} columns={columns} />
-      <Modal
-        centered
-        width={"90%"}
-        title="Chi tiết đơn hàng"
-        open={selectedOrderView}
-        onOk={() => setSelectedOrderView(null)}
-        onCancel={() => {
-          setRefresh((f) => f + 1)
-          setSelectedOrderView(null);
-        }}
+      <Drawer
+         placement="bottom"
+         height={"90%"}
+         title="Chi tiết đơn hàng"
+         open={selectedOrderView}
+         onClose={() => {
+           setRefresh((f) => f + 1)
+           setSelectedOrderView(null);
+         }}
       >
         {selectedOrderView && (
           <div>
@@ -507,7 +506,7 @@ export default function SearchOrdersByStatus() {
             />
           </div>
         )}
-      </Modal>
+      </Drawer>
     </div>
   );
 }

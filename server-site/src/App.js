@@ -63,7 +63,7 @@ function App() {
               logout();
               message.error("Tài khoản bị vô hiệu hóa, bạn bị cưỡng chế đăng xuất!");
             }
-            // setKey(Date.now());
+            setKey(Date.now());
           });
       }
     },

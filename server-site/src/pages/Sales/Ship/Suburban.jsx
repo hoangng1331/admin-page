@@ -269,10 +269,10 @@ export default function SuburbanOrders() {
                   const id = record._id;
                   delectedOrder.orderDetails.forEach(async (orderDetail) => {
                     const remainQuantity = await axiosClient.get(
-                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`
+                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}/order`
                     );
                     axiosClient.patch(
-                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`,
+                      `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}/order`,
                       {
                         quantity:
                           remainQuantity.data.quantity + orderDetail.quantity,
@@ -422,10 +422,10 @@ export default function SuburbanOrders() {
                       delectedOrder.orderDetails.forEach(
                         async (orderDetail) => {
                           const remainQuantity = await axiosClient.get(
-                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`
+                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}/order`
                           );
                           axiosClient.patch(
-                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}`,
+                            `/products/${orderDetail.productId}/variants/${orderDetail.colorId}/sizes/${orderDetail.sizeId}/order`,
                             {
                               quantity:
                                 remainQuantity.data.quantity +
@@ -485,7 +485,7 @@ export default function SuburbanOrders() {
     });
     axiosClient
       .get(
-        `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}`
+        `/products/${selectEditRecord?.productId}/variants/${selectEditRecord?.colorId}/sizes/${selectEditRecord?.sizeId}/order`
       )
       .then((response) => {
         setMaxQuantity(response.data.quantity);

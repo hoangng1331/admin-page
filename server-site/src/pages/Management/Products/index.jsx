@@ -21,6 +21,7 @@ import {
   PlusCircleOutlined,
   PlusOutlined,
   LikeFilled,
+  AppstoreAddOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "../../../hooks/useAuthStore";
 import { axiosClient } from "../../../libraries/axiosClient";
@@ -30,22 +31,29 @@ import ColorForm from "../../Colors";
 import axios from "axios";
 export default function Products() {
   const [isPreview, setIsPreview] = React.useState(false);
+  const [isChooseImage, setIsChooseImage] = React.useState(null);
   const [categories, setCategories] = React.useState([]);
   const [products, setProducts] = React.useState([]);
   const [selectedRecord, setSelectedRecord] = React.useState(null);
   const [refresh, setRefresh] = React.useState(0);
   const [editFormVisible, setEditFormVisible] = React.useState(false);
+  const [addVariant, setAddVariant] = React.useState(null);
+  const [addSize, setAddSize] = React.useState(null);
   const [fileList, setFileList] = React.useState([]);
   const [colors, setColors] = React.useState([]);
-  const [chosenColors, setChosenColors] = React.useState([]);
   const [chosenSizes, setChosenSizes] = React.useState([]);
   const [sizes, setSizes] = React.useState([]);
+  const [vaSizes, setVaSizes] = React.useState([]);
   const [isModalVisible, setIsModalVisible] = React.useState(false);
-  const [addVariants, setAddVariants] = React.useState(false);
   const { auth, logout } = useAuthStore((state) => state);
   const [useRole, setUseRole] = React.useState("");
   const [viewCategory, setViewCategory] = React.useState(null);
   const [newCategory, setNewCategory] = React.useState();
+  const [newSize, setNewSize] = React.useState();
+  const [pVariants, setPVariants] = React.useState();
+  const [selectVariant, setSelectVariant] = React.useState(null);
+  const [selectSize, setSelectSize] = React.useState(null);
+  const [imageUrls, setImageUrls] = React.useState([]);
 
   React.useEffect(
     (e) => {
@@ -72,52 +80,8 @@ export default function Products() {
   }, []);
   const columns = [
     {
-      title: "Hình ảnh",
-      key: "imageUrl",
-      dataIndex: "imageUrl",
-      render: (text, record) => {
-        return (
-          <div>
-            {text && (
-              <React.Fragment>
-                <Image
-                  onClick={() => {
-                    setRefresh((f) => f + 1);
-                    setSelectedRecord(record);
-                    setIsPreview(true);
-                  }}
-                  preview={{
-                    visible: false,
-                  }}
-                  width={60}
-                  src={`${API_URL}${text[0]}`}
-                />
-                <div
-                  style={{
-                    display: "none",
-                  }}
-                >
-                  <Image.PreviewGroup
-                    preview={{
-                      visible: isPreview && record._id === selectedRecord?._id,
-                      onVisibleChange: (vis) => setIsPreview(vis),
-                    }}
-                  >
-                    {record &&
-                      record.imageUrl &&
-                      record.imageUrl.map((image) => {
-                        return <Image key={image} src={`${API_URL}${image}`} />;
-                      })}
-                  </Image.PreviewGroup>
-                </div>
-              </React.Fragment>
-            )}
-          </div>
-        );
-      },
-    },
-    {
       title: "Danh mục",
+      width: "10%",
       dataIndex: "category",
       key: "category",
       render: (text, record) => {
@@ -126,6 +90,7 @@ export default function Products() {
     },
     {
       title: "Tên sản phẩm",
+      width: "15%",
       dataIndex: "name",
       key: "name",
       render: (text) => {
@@ -135,34 +100,48 @@ export default function Products() {
     {
       title: "Chi tiết",
       dataIndex: "variants",
-      width: "40%",
+      width: "45%",
       key: "details",
       render: (variants, record) => (
-        <ul>
-          {variants.map((color, index) => (
-            <li key={index}>
-              <strong>
-                {" "}
-                Màu: {record?.color[index].name} - Giá bán:{" "}
-                {numeral(color.price).format("0,0$")} - Giảm giá:{" "}
-                {numeral(color.discount).format("0,0.0")}%
-              </strong>
-              <ul>
-                {color.sizes.map((size, i) => (
-                  <li key={i}>
-                    Cỡ: {record?.size[index][i].size} - Số lượng:{" "}
-                    {size.quantity}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
+        <Space>
+          <ul>
+            {variants.map((color, index) => (
+              <li key={index}>
+                <strong>
+                  {" "}
+                  Màu: {record?.color[index].name} - Giá bán:{" "}
+                  {numeral(color.price).format("0,0$")} - Giảm giá:{" "}
+                  {numeral(color.discount).format("0,0.0")}%
+                </strong>
+                <ul>
+                  {color.sizes.map((size, i) => (
+                    <li key={i}>
+                      Cỡ: {record?.size[index][i].size} - Số lượng:{" "}
+                      {size.quantity}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+
+          <Button
+            style={{
+              position: "absolute",
+              right: 0,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+            onClick={() => setAddVariant(record)}
+            icon={<AppstoreAddOutlined />}
+          />
+        </Space>
       ),
     },
 
     {
       title: "Tồn kho",
+      width: "10%",
       dataIndex: "stock",
       key: "stock",
       align: "right",
@@ -179,30 +158,31 @@ export default function Products() {
             {(useRole === "Admin") | (useRole === "Quản lý") ? (
               <Space>
                 {useRole === "Admin" && (
-                  <Popconfirm
-                    style={{ width: 800 }}
-                    title="Are you sure to delete?"
-                    onConfirm={() => {
-                      setRefresh((f) => f + 1);
-                      // DELETE
-                      const id = record._id;
-                      axiosClient
-                        .delete("/products/" + id)
-                        .then((response) => {
-                          message.success("Xóa thành công!");
-                          setRefresh((f) => f + 1);
-                        })
-                        .catch((err) => {
-                          message.error("Xóa bị lỗi!");
-                        });
-                      console.log("DELETE", record);
-                    }}
-                    onCancel={() => {}}
-                    okText="Đồng ý"
-                    cancelText="Đóng"
-                  >
-                    <Button danger type="dashed" icon={<DeleteOutlined />} />
-                  </Popconfirm>
+                  <Space>
+                    <Popconfirm
+                      style={{ width: 800 }}
+                      title="Bạn có chắc chắn muốn xóa không?"
+                      onConfirm={() => {
+                        setRefresh((f) => f + 1);
+                        // DELETE
+                        const id = record._id;
+                        axiosClient
+                          .delete("/products/" + id)
+                          .then((response) => {
+                            message.success("Xóa thành công!");
+                            setRefresh((f) => f + 1);
+                          })
+                          .catch((err) => {
+                            message.error("Xóa bị lỗi!");
+                          });
+                      }}
+                      onCancel={() => {}}
+                      okText="Đồng ý"
+                      cancelText="Đóng"
+                    >
+                      <Button danger type="dashed" icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  </Space>
                 )}
                 <Button
                   type="dashed"
@@ -210,7 +190,6 @@ export default function Products() {
                   onClick={() => {
                     setRefresh((f) => f + 1);
                     setSelectedRecord(record);
-                    console.log("Selected Record", record);
                     updateForm.setFieldsValue(record);
                     setEditFormVisible(true);
                   }}
@@ -230,12 +209,198 @@ export default function Products() {
                     setRefresh((f) => f + 1);
                   }}
                 />
+              </Space>
+            ) : (
+              <></>
+            )}
+          </>
+        );
+      },
+    },
+  ];
+
+  const variants = [
+    {
+      title: "Hình ảnh",
+      key: "imageUrl",
+      dataIndex: "imageUrl",
+      render: (text, record) => {
+        return (
+          <div>
+            {text && (
+              <React.Fragment>
+                <Image
+                  onClick={() => {
+                    setRefresh((f) => f + 1);
+                    setIsChooseImage(record);
+                    setIsPreview(true);
+                  }}
+                  preview={{
+                    visible: false,
+                  }}
+                  width={60}
+                  src={`${API_URL}${text[0]}`}
+                />
+                <div
+                  style={{
+                    display: "none",
+                  }}
+                >
+                  <Image.PreviewGroup
+                    preview={{
+                      visible: isPreview && record._id === isChooseImage?._id,
+                      onVisibleChange: (vis) => setIsPreview(vis),
+                    }}
+                  >
+                    {record &&
+                      record.imageUrl &&
+                      record.imageUrl.map((image) => {
+                        return <Image key={image} src={`${API_URL}${image}`} />;
+                      })}
+                  </Image.PreviewGroup>
+                </div>
+              </React.Fragment>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      title: "Màu",
+      dataIndex: "colorId",
+      key: "colorId",
+      render: (text, record) => {
+        const variantColor = colors.find((color) => color._id === text);
+        return (
+          <Space>
+            <span
+              style={{
+                backgroundColor: variantColor.hexcode[0].hex,
+                display: "inline-block",
+                width: "10px",
+                height: "10px",
+              }}
+            />
+            {variantColor?.name}
+          </Space>
+        );
+      },
+    },
+    {
+      title: "Đơn giá",
+      dataIndex: "price",
+      align: "right",
+      key: "price",
+      render: (text, record) => {
+        return <strong>{numeral(text).format("0,0$")}</strong>;
+      },
+    },
+    {
+      title: "Giảm giá",
+      dataIndex: "discount",
+      align: "right",
+      key: "discount",
+      render: (text, record) => {
+        return <span>{numeral(text).format("0,0.0")}%</span>;
+      },
+    },
+
+    {
+      title: "Kích cỡ",
+      dataIndex: "sizes",
+      width: "25%",
+      key: "sizes",
+      render: (variantSizes, record) => {
+        return (
+        <Space>
+          <ul>
+            {variantSizes.map((size, index) => {
+              const sizeName = sizes.find((s) => s._id === size.sizeId);
+              return(
+                <li key={index}>
+                    Kích cỡ: {sizeName?.size} - Số lượng:{" "}
+                    {numeral(size.quantity).format("0,0")}
+                </li>
+              )
+            })}
+          </ul>
+
+          <Button
+            style={{
+              position: "absolute",
+              right: 0,
+              top: "50%",
+              transform: "translateY(-50%)",
+            }}
+            onClick={() => setAddSize(record)}
+            icon={<AppstoreAddOutlined />}
+          />
+        </Space>
+      )}
+    },
+
+    {
+      title: "Tồn kho",
+      dataIndex: "sizes",
+      key: "stock",
+      align: "right",
+      render: (sizesObject, record) => {
+        let totalQuantity = 0;
+        sizesObject.forEach(size => {
+          totalQuantity += size.quantity;
+        });
+        return <span>{numeral(totalQuantity).format("0,0")}</span>;
+      },
+      
+    },
+    {
+      title: "",
+      key: "actions",
+      render: (text, record) => {
+        return (
+          <>
+            {(useRole === "Admin") | (useRole === "Quản lý") ? (
+              <Space>
+                {useRole === "Admin" && (
+                  <Space>
+                    <Popconfirm
+                      style={{ width: 800 }}
+                      title="Bạn có chắc chắn muốn xóa không?"
+                      onConfirm={() => {
+                        setRefresh((f) => f + 1);
+                        // DELETE
+                        const id = record._id;
+                        axiosClient
+                          .delete(`/products/${addVariant._id}/variants/${id}`)
+                          .then((response) => {
+                            message.success("Xóa thành công!");
+                            setRefresh((f) => f + 1);
+                          })
+                          .catch((err) => {
+                            message.error("Xóa bị lỗi!");
+                          });
+                      }}
+                      onCancel={() => {}}
+                      okText="Đồng ý"
+                      cancelText="Đóng"
+                    >
+                      <Button danger type="dashed" icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  </Space>
+                )}
+                <Button
+                  type="dashed"
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    setRefresh((f) => f + 1);
+                    setSelectVariant(record);
+                    updateForm2.setFieldsValue(record);
+                  }}
+                />
                 <Upload
                   showUploadList={false}
                   name="files[]"
-                  action={
-                    API_URL + "/upload/products/" + record._id + "/images"
-                  }
+                  action={`${API_URL}/upload/products/${addVariant._id}/variants/${record._id}/images`}
                   headers={{ authorization: "authorization-text" }}
                   onChange={(info) => {
                     if (info.file.status !== "uploading") {
@@ -264,7 +429,84 @@ export default function Products() {
       },
     },
   ];
+  const vSizes = [
+    {
+      title: "Kích cỡ",
+      dataIndex: "sizeId",
+      key: "sizeId",
+      align: "center",
+      render: (text, record) => {
+        const variantSize = sizes.find((size) => size._id === text);
+        return variantSize?.size
+      },
 
+    },
+
+    {
+      title: "Tồn kho",
+      dataIndex: "quantity",
+      key: "quantity",
+      align: "right",
+      render: (text) => {
+        return <span>{numeral(text).format("0,0")}</span>;
+      },
+    },
+    {
+      title: "",
+      key: "actions",
+      render: (text, record) => {
+        return (
+          <>
+            {(useRole === "Admin") | (useRole === "Quản lý") ? (
+              <Space>
+                {useRole === "Admin" && (
+                  <Space>
+                    <Popconfirm
+                      style={{ width: 800 }}
+                      title="Bạn có chắc chắn muốn xóa không?"
+                      onConfirm={() => {
+                        setRefresh((f) => f + 1);
+                        // DELETE
+                        const id = record._id;
+                        axiosClient
+                          .delete(
+                            `/products/${addVariant._id}/variants/${addSize._id}/sizes/${id}`
+                          )
+                          .then((response) => {
+                            message.success("Xóa thành công!");
+                            setRefresh((f) => f + 1);
+                          })
+                          .catch((err) => {
+                            message.error("Xóa bị lỗi!");
+                            setRefresh((f) => f + 1);
+                          });
+                      }}
+                      onCancel={() => {}}
+                      okText="Đồng ý"
+                      cancelText="Đóng"
+                    >
+                      <Button danger type="dashed" icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  </Space>
+                )}
+                <Button
+                  type="dashed"
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    setRefresh((f) => f + 1);
+                    setSelectSize(record);
+                    updateForm3.setFieldsValue(record);
+                  }}
+                />
+              </Space>
+            ) : (
+              <></>
+            )}
+          </>
+        );
+      },
+    },
+  ];
   const props = {
     onRemove: (file) => {
       const index = fileList.indexOf(file);
@@ -283,11 +525,19 @@ export default function Products() {
     try {
       const response = await axiosClient.get("/colors"); // Thay đổi đường dẫn API tương ứng
       setColors(response.data);
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) {}
   };
   React.useEffect(() => {
+    axiosClient
+      .get(`/products/${addVariant?._id}/variants`)
+      .then((response) => {
+        setPVariants(response.data);
+      });
+    axiosClient
+      .get(`/products/${addVariant?._id}/variants/${addSize?._id}/sizes`)
+      .then((response) => {
+        setVaSizes(response.data);
+      });
     axiosClient.get("/sizes").then((response) => {
       setSizes(response.data);
     });
@@ -295,46 +545,31 @@ export default function Products() {
       setCategories(response.data);
     });
     fetchColors();
-  }, [refresh]);
+  }, [refresh, addVariant, addSize]);
   const onNewCategory = (event) => {
     setNewCategory(event.target.value);
+  };
+  const onNewSize = (event) => {
+    setNewSize(event.target.value);
   };
   React.useEffect(() => {
     axiosClient
       .post("/products/category", { categoryId: viewCategory })
       .then((response) => {
         setProducts(response.data);
-        console.log(response.data);
       });
   }, [viewCategory, refresh]);
 
   const onFinish = (values) => {
-    console.log(values);
     axiosClient
       .post("/products", values)
       .then((response) => {
-        console.log("kjaskj", response);
-
-        // UPLOAD FILES
-        const { _id } = response.data;
-        const formData = new FormData();
-        fileList.forEach((file) => {
-          formData.append("files[]", file);
-        });
-        axios
-          .post(API_URL + "/upload/products/" + _id, formData)
-          .then((respose) => {
-            message.success("Thêm mới thành công!");
-            createForm.resetFields();
-            setFileList([]);
-            setRefresh((f) => f + 1);
-          })
-          .catch((err) => {
-            message.error("Upload file bị lỗi!");
-          });
+        message.success("Thêm mới thành công!");
+        createForm.resetFields();
+        setFileList([]);
+        setRefresh((f) => f + 1);
       })
       .catch((err) => {
-        console.log(err);
         message.error("Thêm mới bị lỗi!");
       });
   };
@@ -365,7 +600,152 @@ export default function Products() {
   };
 
   const [createForm] = Form.useForm();
+  const [createForm2] = Form.useForm();
+  const [createForm3] = Form.useForm();
   const [updateForm] = Form.useForm();
+  const [updateForm2] = Form.useForm();
+  const [updateForm3] = Form.useForm();
+  const onComplete = (values) => {
+    axiosClient
+      .get(`/products/${addVariant._id}/variants`)
+      .then((response) => {
+        const variant = response.data.find((v) => v.colorId === values.colorId);
+        if (variant) {
+          message.error("Màu này đã tồn tại!");
+          return;
+        }
+        axiosClient
+          .post(`/products/${addVariant._id}/variants`, values)
+          .then((response) => {
+            console.log({ response });
+            // UPLOAD FILES
+            const { _id } = response.data;
+            const formData = new FormData();
+            fileList.forEach((file) => {
+              formData.append("files[]", file);
+            });
+            axios
+              .post(
+                `${API_URL}/upload/products/${addVariant._id}/variants/${_id}`,
+                formData
+              )
+              .then((response) => {
+                message.success("Thêm mới thành công!");
+                createForm2.resetFields();
+                setFileList([]);
+                setRefresh((f) => f + 1);
+              })
+              .catch((err) => {
+                message.error("Upload file bị lỗi!");
+              });
+          })
+          .catch((err) => {
+            console.log(err);
+            message.error("Thêm mới bị lỗi!");
+          });
+      })
+      .catch((err) => {
+        console.log(err);
+        message.error("Lỗi khi tìm kiếm variant!");
+      });
+  };
+
+  const onUpdateVariant = (values) => {
+    console.log({ values }, "jsdkdjsjdk");
+    axiosClient
+      .get(`/products/${addVariant._id}/variants`)
+      .then((response) => {
+        const variant = response.data.find(
+          (v) => v.colorId === values.colorId && v._id !== selectVariant._id
+        );
+        if (variant) {
+          message.error("Màu này đã tồn tại!");
+          return;
+        }
+        axiosClient
+          .patch(`/products/${addVariant._id}/variants/${selectVariant._id}`, {
+            colorId: values.colorId,
+            discount: values.discount,
+            price: values.price,
+            imageUrl: imageUrls,
+          })
+          .then((response) => {
+            message.success("Cập nhật thành công!");
+            updateForm2.resetFields();
+            setChosenSizes([]);
+            setRefresh((f) => f + 1);
+            setSelectVariant(null);
+          })
+          .catch((err) => {
+            message.error("Cập nhật bị lỗi!");
+          });
+      })
+      .catch((err) => {
+        message.error("Lỗi khi tìm kiếm variant!");
+      });
+  };
+  const onAddSize = (values) => {
+    axiosClient
+      .get(`/products/${addVariant._id}/variants/${addSize._id}/sizes`)
+      .then((response) => {
+        const sizes = response.data.find((v) => v.sizeId === values.sizeId);
+        if (sizes) {
+          message.error("Size này đã tồn tại!");
+          return;
+        }
+        axiosClient
+          .post(
+            `/products/${addVariant._id}/variants/${addSize._id}/sizes`,
+            values
+          )
+          .then((response) => {
+            console.log({ response });
+            createForm3.resetFields();
+            setRefresh((f) => f + 1);
+          })
+          .catch((err) => {
+            console.log(err);
+            message.error("Lỗi khi tìm kiếm variant!");
+          });
+      });
+  };
+
+  const onUpdateSize = (values) => {
+    axiosClient
+      .get(`/products/${addVariant._id}/variants/${addSize._id}/sizes`)
+      .then((response) => {
+        const variant = response.data.find(
+          (v) => v.sizeId === values.sizeId && v._id !== selectSize._id
+        );
+        if (variant) {
+          message.error("Size này đã tồn tại!");
+          return;
+        }
+        axiosClient
+          .patch(
+            `/products/${addVariant._id}/variants/${addSize._id}/sizes/${selectSize._id}`,
+            values
+          )
+          .then((response) => {
+            message.success("Cập nhật thành công!");
+            updateForm3.resetFields();
+            setChosenSizes([]);
+            setRefresh((f) => f + 1);
+            setSelectSize(null);
+          })
+          .catch((err) => {
+            message.error("Cập nhật bị lỗi!");
+          });
+      })
+      .catch((err) => {
+        message.error("Lỗi khi tìm kiếm variant!");
+      });
+  };
+  React.useEffect(() => {
+    if (selectVariant) {
+      setImageUrls(selectVariant.imageUrl);
+    }
+  }, [selectVariant]);
 
   return (
     <div>
@@ -466,286 +846,6 @@ export default function Products() {
           >
             <Input.TextArea />
           </Form.Item>
-          <Form.List name="variants">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map((field) => (
-                  <div key={field.key}>
-                    <Form.Item
-                      label="Màu"
-                      name={[field.name, "colorId"]}
-                      fieldKey={[field.fieldKey, "colorId"]}
-                      rules={[{ required: true, message: "Hãy chọn một màu!" }]}
-                    >
-                      <Select
-                        showSearch
-                        optionFilterProp="children"
-                        value={colors}
-                        onChange={(colorId) => {
-                          const selectedColor = colors.find(
-                            (color) => color._id === colorId
-                          );
-                          const existingColorIndex = chosenColors.findIndex(
-                            (c) => c.id === field.key
-                          );
-                          if (existingColorIndex === -1) {
-                            setChosenColors([
-                              ...chosenColors,
-                              {
-                                id: field.key,
-                                colorId: colorId,
-                                name: selectedColor.name,
-                                hexcode: selectedColor.hexcode[0].hex,
-                              },
-                            ]);
-                          } else {
-                            const newChosenColors = [...chosenColors];
-                            newChosenColors[existingColorIndex] = {
-                              id: field.key,
-                              colorId: colorId,
-                              name: selectedColor.name,
-                              hexcode: selectedColor.hexcode[0].hex,
-                            };
-                            setChosenColors(newChosenColors);
-                          }
-                        }}
-                        style={{
-                          width: 300,
-                        }}
-                        dropdownRender={(menu) => (
-                          <>
-                            {menu}
-                            <Divider
-                              style={{
-                                margin: "4px 0",
-                              }}
-                            />
-                            <Space
-                              style={{
-                                padding: "0 4px 2px",
-                              }}
-                            >
-                              <Button
-                                type="text"
-                                icon={<PlusOutlined />}
-                                onClick={showModal}
-                              >
-                                Thêm màu mới
-                              </Button>
-                            </Space>
-                          </>
-                        )}
-                        virtual
-                        optionHeight={20}
-                      >
-                        {colors
-                          .filter(
-                            (color) =>
-                              chosenColors.findIndex(
-                                (c) => c.colorId === color._id
-                              ) === -1
-                          )
-                          .map((color, index) => (
-                            <Select.Option key={color._id} value={color._id}>
-                              <span
-                                style={{
-                                  backgroundColor: color.hexcode[0].hex,
-                                  display: "inline-block",
-                                  width: "10px",
-                                  height: "10px",
-                                  marginRight: "3px",
-                                }}
-                              />
-                              {color.name}
-                            </Select.Option>
-                          ))}
-                      </Select>
-                    </Form.Item>
-                    <Modal
-                      open={isModalVisible}
-                      onCancel={() => {
-                        setRefresh((f) => f + 1);
-                        setIsModalVisible(false);
-                      }}
-                      onOk={() => {
-                        setRefresh((f) => f + 1);
-                        setIsModalVisible(false);
-                      }}
-                    >
-                      <ColorForm />
-                    </Modal>
-                    <Form.Item
-                      label="Price"
-                      name={[field.name, "price"]}
-                      rules={[
-                        {
-                          required: true,
-                          message: "Hãy nhập giá bán!",
-                        },
-                      ]}
-                      fieldKey={[field.fieldKey, "price"]}
-                    >
-                      <Input type="number" min={0} style={{ width: 150 }} />
-                    </Form.Item>
-                    <Form.Item
-                      label="Discount"
-                      name={[field.name, "discount"]}
-                      fieldKey={[field.fieldKey, "discount"]}
-                    >
-                      <Input
-                        type="number"
-                        step={0.01}
-                        min={0}
-                        max={100}
-                        style={{ width: 100 }}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                      label="Kích cỡ và số lượng"
-                      name={[field.name, "sizes"]}
-                      fieldKey={[field.fieldKey, "sizes"]}
-                    >
-                      <Form.List name={[field.name, "sizes"]}>
-                        {(sizeFields, { add: addSize, remove: removeSize }) => (
-                          <>
-                            {sizeFields.map((sizeField) => (
-                              <div key={sizeField.key}>
-                                <Form.Item
-                                  label="Size"
-                                  name={[sizeField.name, "sizeId"]}
-                                  fieldKey={[sizeField.fieldKey, "sizeId"]}
-                                  rules={[
-                                    {
-                                      required: true,
-                                      message: "Hãy chọn một kích cỡ!",
-                                    },
-                                  ]}
-                                >
-                                  <Select
-                                    onChange={(sizeId) => {
-                                      const selectedSize = sizes.find(
-                                        (size) => size._id === sizeId
-                                      );
-                                      const existingSizeIndex =
-                                        chosenSizes.findIndex(
-                                          (c) => c.id === sizeField.key
-                                        );
-                                      if (existingSizeIndex === -1) {
-                                        setChosenSizes([
-                                          ...chosenSizes,
-                                          {
-                                            id: sizeField.key,
-                                            sizeId: sizeId,
-                                            size: selectedSize.size,
-                                          },
-                                        ]);
-                                      } else {
-                                        const newChosenSizes = [...chosenSizes];
-                                        newChosenSizes[existingSizeIndex] = {
-                                          id: sizeField.key,
-                                          sizeId: sizeId,
-                                          size: selectedSize.size,
-                                        };
-                                        setChosenSizes(newChosenSizes);
-                                      }
-                                    }}
-                                    style={{ width: 150 }}
-                                    options={
-                                      sizes &&
-                                      sizes
-                                        .filter(
-                                          (size) =>
-                                            chosenSizes.findIndex(
-                                              (c) => c.sizeId === size._id
-                                            ) === -1
-                                        )
-                                        .map((c) => {
-                                          return {
-                                            value: c._id,
-                                            label: c.size,
-                                          };
-                                        })
-                                    }
-                                  />
-                                </Form.Item>
-                                <Form.Item
-                                  label="Quantity"
-                                  name={[sizeField.name, "quantity"]}
-                                  rules={[
-                                    {
-                                      required: true,
-                                      message: "Hãy nhập số lượng!",
-                                    },
-                                  ]}
-                                  fieldKey={[sizeField.fieldKey, "quantity"]}
-                                >
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    style={{ width: 100 }}
-                                  />
-                                </Form.Item>
-                                <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                                  <Button
-                                    onClick={() => {
-                                      setRefresh((f) => f + 1);
-                                      removeSize(sizeField.name);
-                                    }}
-                                    icon={<DeleteOutlined />}
-                                  >
-                                    Xóa kích cỡ
-                                  </Button>
-                                </Form.Item>
-                              </div>
-                            ))}
-                            <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                              <Button
-                                onClick={() => {
-                                  setRefresh((f) => f + 1);
-                                  addSize();
-                                }}
-                                icon={<PlusCircleOutlined />}
-                              >
-                                Thêm kích cỡ
-                              </Button>
-                            </Form.Item>
-                          </>
-                        )}
-                      </Form.List>
-                    </Form.Item>
-
-                    <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                      <Button
-                        onClick={() => {
-                          setRefresh((f) => f + 1);
-                          remove(field.name);
-                        }}
-                        icon={<DeleteOutlined />}
-                      >
-                        Xóa màu
-                      </Button>
-                    </Form.Item>
-                  </div>
-                ))}
-                <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                  <Button
-                    onClick={() => {
-                      setRefresh((f) => f + 1);
-                      add();
-                    }}
-                    icon={<PlusCircleOutlined />}
-                  >
-                    Thêm màu
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-          <Form.Item label="Hình minh họa" name="files">
-            <Upload {...props}>
-              <Button icon={<PlusOutlined />}>Tải lên</Button>
-            </Upload>
-          </Form.Item>
           <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
             <Button type="primary" htmlType="submit" block>
               Lưu thông tin
@@ -815,6 +915,7 @@ export default function Products() {
         }}
         onCancel={() => {
           setEditFormVisible(false);
+          message.warning("Các thay đổi chưa được lưu");
         }}
         okText="Lưu thông tin"
         cancelText="Đóng"
@@ -836,17 +937,65 @@ export default function Products() {
             hasFeedback
           >
             <Select
-              disabled={useRole !== "Admin"}
-              options={
-                categories &&
-                categories.map((c) => {
-                  return {
-                    value: c._id,
-                    label: c.name,
-                  };
-                })
-              }
-            />
+              showSearch
+              optionFilterProp="children"
+              value={colors}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <Divider
+                    style={{
+                      margin: "4px 0",
+                    }}
+                  />
+                  <Space
+                    style={{
+                      padding: "0 4px 2px",
+                    }}
+                  >
+                    <Input
+                      placeholder="Nhập tên danh mục mới"
+                      value={newCategory}
+                      onChange={onNewCategory}
+                    />
+                    <Button
+                      type="text"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        setRefresh((f) => f + 1);
+                        axiosClient
+                          .post("/categories", { name: newCategory })
+                          .then((response) => {
+                            message.success(
+                              "Đã thêm " +
+                                newCategory +
+                                " vào danh mục sản phẩm"
+                            );
+                            setRefresh((f) => f + 1);
+                            setNewCategory(null);
+                          })
+                          .catch((err) => {
+                            message.error(
+                              "Thêm thất bại, danh mục này đã tồn tại!"
+                            );
+                          });
+                        setRefresh((f) => f + 1);
+                      }}
+                    >
+                      Thêm mới
+                    </Button>
+                  </Space>
+                </>
+              )}
+              virtual
+              optionHeight={20}
+            >
+              {categories.map((category, index) => (
+                <Select.Option key={category._id} value={category._id}>
+                  {category.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -868,230 +1017,532 @@ export default function Products() {
           >
             <Input.TextArea readOnly={useRole !== "Admin"} />
           </Form.Item>
-          <Form.List name="variants">
-            {(fields, { add, remove }) => (
+        </Form>
+      </Modal>
+      <Modal
+        centered
+        width={"90%"}
+        open={addVariant}
+        title={"Thêm thông tin sản phẩm: " + addVariant?.name}
+        onOk={() => {
+          setAddVariant(null);
+        }}
+        onCancel={() => {
+          setAddVariant(null);
+        }}
+        okText="Xong"
+        cancelText="Đóng"
+      >
+        <div>
+          {useRole === "Admin" && (
+            <Form
+              form={createForm2}
+              name="create-form2"
+              labelCol={{ span: 8 }}
+              wrapperCol={{ span: 16 }}
+              initialValues={{ remember: true }}
+              onFinish={onComplete}
+              onFinishFailed={onFinishFailed}
+              autoComplete="on"
+            >
               <>
-                {fields.map((field) => (
-                  <div key={field.key}>
-                    <Form.Item
-                      label="Màu"
-                      name={[field.name, "colorId"]}
-                      fieldKey={[field.fieldKey, "colorId"]}
-                      rules={[{ required: true, message: "Hãy chọn một màu!" }]}
-                    >
-                      <Select
-                        disabled={useRole !== "Admin"}
-                        showSearch
-                        value={colors}
-                        optionFilterProp="children"
-                        style={{
-                          width: 300,
-                        }}
-                        dropdownRender={(menu) => (
-                          <>
-                            {menu}
-                            <Divider
-                              style={{
-                                margin: "4px 0",
-                              }}
-                            />
-                            <Space
-                              style={{
-                                padding: "0 4px 2px",
-                              }}
-                            >
-                              <Button
-                                type="text"
-                                icon={<PlusOutlined />}
-                                onClick={showModal}
-                              >
-                                Thêm màu mới
-                              </Button>
-                            </Space>
-                          </>
-                        )}
-                        virtual
-                        optionHeight={20}
-                      >
-                        {colors.map((color, index) => (
-                          <Select.Option key={color._id} value={color._id}>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                              }}
-                            >
-                              <span
-                                style={{
-                                  backgroundColor: color.hexcode[0].hex,
-                                  display: "inline-block",
-                                  width: "20px",
-                                  height: "20px",
-                                }}
-                              ></span>
-                              <span style={{ marginLeft: "8px" }}>
-                                {colors[index].name}
-                              </span>
-                            </div>
-                          </Select.Option>
-                        ))}
-                      </Select>
-                    </Form.Item>
-                    <Modal
-                      open={isModalVisible}
-                      onCancel={() => {
-                        setRefresh((f) => f + 1);
-                        setIsModalVisible(false);
-                      }}
-                      footer={null}
-                    >
-                      <ColorForm />
-                    </Modal>
-                    <Form.Item
-                      label="Price"
-                      name={[field.name, "price"]}
-                      rules={[
-                        {
-                          required: true,
-                          message: "Hãy nhập giá bán!",
-                        },
-                      ]}
-                      fieldKey={[field.fieldKey, "price"]}
-                    >
-                      <Input
-                        type="number"
-                        min={0}
-                        style={{ width: 150 }}
-                        readOnly={useRole !== "Admin"}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                      label="Discount"
-                      name={[field.name, "discount"]}
-                      fieldKey={[field.fieldKey, "discount"]}
-                    >
-                      <Input
-                        type="number"
-                        step={0.01}
-                        min={0}
-                        max={100}
-                        style={{ width: 100 }}
-                        readOnly={useRole !== "Admin" && useRole !== "Quản lý"}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                      label="Kích cỡ và số lượng"
-                      name={[field.name, "sizes"]}
-                      fieldKey={[field.fieldKey, "sizes"]}
-                    >
-                      <Form.List name={[field.name, "sizes"]}>
-                        {(sizeFields, { add: addSize, remove: removeSize }) => (
-                          <>
-                            {sizeFields.map((sizeField) => (
-                              <div key={sizeField.key}>
-                                <Form.Item
-                                  label="Size"
-                                  name={[sizeField.name, "sizeId"]}
-                                  fieldKey={[sizeField.fieldKey, "sizeId"]}
-                                  rules={[
-                                    {
-                                      required: true,
-                                      message: "Hãy chọn một kích cỡ!",
-                                    },
-                                  ]}
-                                >
-                                  <Select
-                                    disabled={useRole !== "Admin"}
-                                    style={{ width: 150 }}
-                                    options={
-                                      sizes &&
-                                      sizes.map((c) => {
-                                        return {
-                                          value: c._id,
-                                          label: c.size,
-                                        };
-                                      })
-                                    }
-                                  />
-                                </Form.Item>
-                                <Form.Item
-                                  label="Quantity"
-                                  name={[sizeField.name, "quantity"]}
-                                  rules={[
-                                    {
-                                      required: true,
-                                      message: "Hãy nhập số lượng!",
-                                    },
-                                  ]}
-                                  fieldKey={[sizeField.fieldKey, "quantity"]}
-                                >
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    style={{ width: 100 }}
-                                  />
-                                </Form.Item>
-                                <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                                  <Button
-                                    disabled={useRole !== "Admin"}
-                                    onClick={() => {
-                                      setRefresh((f) => f + 1);
-                                      removeSize(sizeField.name);
-                                    }}
-                                    icon={<DeleteOutlined />}
-                                  >
-                                    Xóa kích cỡ
-                                  </Button>
-                                </Form.Item>
-                              </div>
-                            ))}
-                            <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                              <Button
-                                disabled={useRole !== "Admin"}
-                                onClick={() => {
-                                  setRefresh((f) => f + 1);
-                                  addSize();
-                                }}
-                                icon={<PlusCircleOutlined />}
-                              >
-                                Thêm kích cỡ
-                              </Button>
-                            </Form.Item>
-                          </>
-                        )}
-                      </Form.List>
-                    </Form.Item>
-
-                    <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                      <Button
-                        disabled={useRole !== "Admin"}
-                        onClick={() => {
-                          setRefresh((f) => f + 1);
-                          remove(field.name);
-                        }}
-                        icon={<DeleteOutlined />}
-                      >
-                        Xóa màu
-                      </Button>
-                    </Form.Item>
-                  </div>
-                ))}
-                <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
-                  <Button
-                    disabled={useRole !== "Admin"}
-                    onClick={() => {
-                      setRefresh((f) => f + 1);
-                      add();
+                <Form.Item
+                  label="Màu"
+                  name="colorId"
+                  rules={[{ required: true, message: "Hãy chọn một màu!" }]}
+                >
+                  <Select
+                    showSearch
+                    optionFilterProp="children"
+                    value={colors}
+                    style={{
+                      width: 300,
                     }}
-                    icon={<PlusCircleOutlined />}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <Divider
+                          style={{
+                            margin: "4px 0",
+                          }}
+                        />
+                        <Space
+                          style={{
+                            padding: "0 4px 2px",
+                          }}
+                        >
+                          <Button
+                            type="text"
+                            icon={<PlusOutlined />}
+                            onClick={showModal}
+                          >
+                            Thêm màu mới
+                          </Button>
+                        </Space>
+                      </>
+                    )}
+                    virtual
+                    optionHeight={20}
                   >
-                    Thêm màu
-                  </Button>
+                    {colors.map((color, index) => (
+                      <Select.Option key={color._id} value={color._id}>
+                        <span
+                          style={{
+                            backgroundColor: color.hexcode[0].hex,
+                            display: "inline-block",
+                            width: "10px",
+                            height: "10px",
+                            marginRight: "3px",
+                          }}
+                        />
+                        {color.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Modal
+                  open={isModalVisible}
+                  onCancel={() => {
+                    setRefresh((f) => f + 1);
+                    setIsModalVisible(false);
+                  }}
+                  onOk={() => {
+                    setRefresh((f) => f + 1);
+                    setIsModalVisible(false);
+                  }}
+                >
+                  <ColorForm />
+                </Modal>
+                <Form.Item
+                  label="Giá"
+                  name="price"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Hãy nhập giá bán!",
+                    },
+                  ]}
+                >
+                  <Input type="number" min={0} style={{ width: 150 }} />
+                </Form.Item>
+                <Form.Item label="Giảm giá" name="discount">
+                  <Input
+                    type="number"
+                    step={0.01}
+                    min={0}
+                    max={100}
+                    style={{ width: 100 }}
+                  />
                 </Form.Item>
               </>
-            )}
-          </Form.List>
-        </Form>
+
+              <Form.Item label="Hình minh họa" name="files">
+                <Upload {...props}>
+                  <Button icon={<PlusOutlined />}>Tải lên</Button>
+                </Upload>
+              </Form.Item>
+              <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                <Button type="primary" htmlType="submit" block>
+                  Thêm
+                </Button>
+              </Form.Item>
+            </Form>
+          )}
+
+          <Table
+            rowKey="_id"
+            dataSource={pVariants}
+            columns={variants}
+            scroll={{ y: 500 }}
+          />
+          <Modal
+            centered
+            open={selectVariant}
+            title="Cập nhật thông tin"
+            onOk={() => {
+              updateForm2.submit();
+            }}
+            onCancel={() => {
+              setSelectVariant(null);
+              message.warning("Các thay đổi chưa được lưu");
+            }}
+            okText="Lưu thông tin"
+            cancelText="Đóng"
+          >
+            <Form
+              form={updateForm2}
+              name="update-form2"
+              labelCol={{ span: 8 }}
+              wrapperCol={{ span: 16 }}
+              initialValues={{ remember: true }}
+              onFinish={onUpdateVariant}
+              onFinishFailed={onUpdateFinishFailed}
+              autoComplete="on"
+            >
+              <>
+                <Form.Item
+                  label="Màu"
+                  name="colorId"
+                  rules={[{ required: true, message: "Hãy chọn một màu!" }]}
+                >
+                  <Select
+                    showSearch
+                    optionFilterProp="children"
+                    value={colors}
+                    style={{
+                      width: 300,
+                    }}
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <Divider
+                          style={{
+                            margin: "4px 0",
+                          }}
+                        />
+                        <Space
+                          style={{
+                            padding: "0 4px 2px",
+                          }}
+                        >
+                          <Button
+                            type="text"
+                            icon={<PlusOutlined />}
+                            onClick={showModal}
+                          >
+                            Thêm màu mới
+                          </Button>
+                        </Space>
+                      </>
+                    )}
+                    virtual
+                    optionHeight={20}
+                  >
+                    {colors.map((color, index) => (
+                      <Select.Option key={color._id} value={color._id}>
+                        <span
+                          style={{
+                            backgroundColor: color.hexcode[0].hex,
+                            display: "inline-block",
+                            width: "10px",
+                            height: "10px",
+                            marginRight: "3px",
+                          }}
+                        />
+                        {color.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Modal
+                  open={isModalVisible}
+                  onCancel={() => {
+                    setRefresh((f) => f + 1);
+                    setIsModalVisible(false);
+                  }}
+                  onOk={() => {
+                    setRefresh((f) => f + 1);
+                    setIsModalVisible(false);
+                  }}
+                >
+                  <ColorForm />
+                </Modal>
+                <Form.Item
+                  label="Giá"
+                  name="price"
+                  rules={[
+                    {
+                      required: true,
+                      message: "Hãy nhập giá bán!",
+                    },
+                  ]}
+                >
+                  <Input type="number" min={0} style={{ width: 150 }} />
+                </Form.Item>
+                <Form.Item label="Giảm giá" name="discount">
+                  <Input
+                    type="number"
+                    step={0.01}
+                    min={0}
+                    max={100}
+                    style={{ width: 100 }}
+                  />
+                </Form.Item>
+                <Form.Item label="Hình ảnh" name="imageUrl">
+                  {selectVariant &&
+                    imageUrls.map((image, index) => {
+                      return (
+                        <Space>
+                          <Image
+                            preview
+                            width={60}
+                            style={{ marginLeft: 5 }}
+                            key={image}
+                            src={`${API_URL}${image}`}
+                          />
+                          <Popconfirm
+                            style={{ width: 800 }}
+                            title="Bạn có chắc chắn muốn xóa không?"
+                            onConfirm={() => {
+                              setRefresh((f) => f + 1);
+                              // DELETE
+                              const updatedOrderItems = [...imageUrls];
+                              updatedOrderItems.splice(index, 1); // Xóa sản phẩm khỏi danh sách
+                              setImageUrls(updatedOrderItems);
+                            }}
+                            onCancel={() => {}}
+                            okText="Đồng ý"
+                            cancelText="Đóng"
+                          >
+                            <Button
+                              danger
+                              type="dashed"
+                              icon={<DeleteOutlined />}
+                            />
+                          </Popconfirm>
+                        </Space>
+                      );
+                    })}
+                </Form.Item>
+              </>
+            </Form>
+          </Modal>
+        </div>
+      </Modal>
+      <Modal
+        centered
+        width={"50%"}
+        open={addSize}
+        title="Thêm kích cỡ và số lượng"
+        onOk={() => {
+          setAddSize(null);
+        }}
+        onCancel={() => {
+          setAddSize(null);
+        }}
+        okText="Xong"
+        cancelText="Đóng"
+      >
+        <div>
+          {useRole === "Admin" && (
+            <Form
+              form={createForm3}
+              name="create-form3"
+              labelCol={{ span: 8 }}
+              wrapperCol={{ span: 16 }}
+              initialValues={{ remember: true }}
+              onFinish={onAddSize}
+              onFinishFailed={onFinishFailed}
+              autoComplete="on"
+            >
+              <Form.Item
+                label="Size"
+                name="sizeId"
+                rules={[
+                  {
+                    required: true,
+                    message: "Hãy chọn một kích cỡ!",
+                  },
+                ]}
+              >
+                <Select
+              showSearch
+              optionFilterProp="children"
+              value={sizes}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <Divider
+                    style={{
+                      margin: "4px 0",
+                    }}
+                  />
+                  <Space
+                    style={{
+                      padding: "0 4px 2px",
+                    }}
+                  >
+                    <Input
+                      placeholder="Nhập kích cỡ mới"
+                      value={newSize}
+                      onChange={onNewSize}
+                    />
+                    <Button
+                      type="text"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        setRefresh((f) => f + 1);
+                        axiosClient
+                          .post("/sizes", { size: newSize })
+                          .then((response) => {
+                            message.success(
+                              "Đã thêm " +
+                                newSize +
+                                " vào danh mục kích cỡ"
+                            );
+                            setRefresh((f) => f + 1);
+                            setNewSize(null);
+                          })
+                          .catch((err) => {
+                            message.error(
+                              "Thêm thất bại, kích cỡ này đã tồn tại!"
+                            );
+                          });
+                        setRefresh((f) => f + 1);
+                      }}
+                    >
+                      Thêm mới
+                    </Button>
+                  </Space>
+                </>
+              )}
+              virtual
+              optionHeight={20}
+            >
+              {sizes.map((size, index) => (
+                <Select.Option key={size._id} value={size._id}>
+                  {size.size}
+                </Select.Option>
+              ))}
+            </Select>
+              </Form.Item>
+              <Form.Item
+                label="Số lượng"
+                name="quantity"
+                rules={[
+                  {
+                    required: true,
+                    message: "Hãy nhập số lượng!",
+                  },
+                ]}
+              >
+                <Input type="number" min={0} style={{ width: 100 }} />
+              </Form.Item>
+
+              <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                <Button type="primary" htmlType="submit" block>
+                  Thêm
+                </Button>
+              </Form.Item>
+            </Form>
+          )}
+
+          <Table
+            rowKey="_id"
+            dataSource={vaSizes}
+            columns={vSizes}
+            scroll={{ y: 500 }}
+          />
+          <Modal
+            centered
+            open={selectSize}
+            title="Cập nhật thông tin"
+            onOk={() => {
+              updateForm3.submit();
+            }}
+            onCancel={() => {
+              setSelectSize(null);
+              message.warning("Các thay đổi chưa được lưu");
+            }}
+            okText="Lưu thông tin"
+            cancelText="Đóng"
+          >
+            <Form
+              form={updateForm3}
+              name="update-form3"
+              labelCol={{ span: 8 }}
+              wrapperCol={{ span: 16 }}
+              initialValues={{ remember: true }}
+              onFinish={onUpdateSize}
+              onFinishFailed={onUpdateFinishFailed}
+              autoComplete="on"
+            >
+              <Form.Item
+                label="Size"
+                name="sizeId"
+                rules={[
+                  {
+                    required: true,
+                    message: "Hãy chọn một kích cỡ!",
+                  },
+                ]}
+              >
+                <Select
+              showSearch
+              optionFilterProp="children"
+              value={sizes}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <Divider
+                    style={{
+                      margin: "4px 0",
+                    }}
+                  />
+                  <Space
+                    style={{
+                      padding: "0 4px 2px",
+                    }}
+                  >
+                    <Input
+                      placeholder="Nhập kích cỡ mới"
+                      value={newSize}
+                      onChange={onNewSize}
+                    />
+                    <Button
+                      type="text"
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        setRefresh((f) => f + 1);
+                        axiosClient
+                          .post("/sizes", { size: newSize })
+                          .then((response) => {
+                            message.success(
+                              "Đã thêm " +
+                                newSize +
+                                " vào danh mục kích cỡ"
+                            );
+                            setRefresh((f) => f + 1);
+                            setNewSize(null);
+                          })
+                          .catch((err) => {
+                            message.error(
+                              "Thêm thất bại, kích cỡ này đã tồn tại!"
+                            );
+                          });
+                        setRefresh((f) => f + 1);
+                      }}
+                    >
+                      Thêm mới
+                    </Button>
+                  </Space>
+                </>
+              )}
+              virtual
+              optionHeight={20}
+            >
+              {sizes.map((size, index) => (
+                <Select.Option key={size._id} value={size._id}>
+                  {size.size}
+                </Select.Option>
+              ))}
+            </Select>
+              </Form.Item>
+              <Form.Item
+                label="Số lượng"
+                name="quantity"
+                rules={[
+                  {
+                    required: true,
+                    message: "Hãy nhập số lượng!",
+                  },
+                ]}
+              >
+                <Input type="number" min={0} style={{ width: 100 }} />
+              </Form.Item>
+            </Form>
+          </Modal>
+        </div>
       </Modal>
     </div>
   );
