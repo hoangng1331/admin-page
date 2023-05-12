@@ -180,7 +180,7 @@ export default function Orders() {
             <Button
               icon={<EditOutlined />}
               onClick={async () => {
-                setRefresh((f) => f + 1)
+                setRefresh((f) => f + 1);
                 setSelectEditRecord(record);
                 axiosClient
                   .get(
@@ -196,7 +196,7 @@ export default function Orders() {
             />
             <Button
               onClick={async () => {
-                setRefresh((f) => f + 1)
+                setRefresh((f) => f + 1);
                 const remainQuantity = await axiosClient.get(
                   `/products/${record.productId}/variants/${record.colorId}/sizes/${record.sizeId}/order`
                 );
@@ -322,11 +322,7 @@ export default function Orders() {
       dataIndex: "customer",
       key: "customer",
       render: (text, record) => {
-        return (
-          <strong>
-            {record.customer ? record.customer.fullName : record.customerName}
-          </strong>
-        );
+        return <strong>{record.receiverName}</strong>;
       },
     },
     {
@@ -371,7 +367,7 @@ export default function Orders() {
           <strong>
             {record?.employeeLogin?.fullName
               ? record.employeeLogin.fullName
-              : employeeName}
+              : employeeName ? employeeName: record.customer.fullName }
           </strong>
         );
       },
@@ -403,7 +399,7 @@ export default function Orders() {
             {isDisabled ? (
               <Button
                 onClick={() => {
-                  setRefresh((f) => f + 1)
+                  setRefresh((f) => f + 1);
                   setSelectedOrderView(record);
                   axiosClient
                     .get("/employees/" + record?.verifier?.employeeId)
@@ -424,13 +420,49 @@ export default function Orders() {
                 disabled={isDisabled}
               />
             )}
+            {record.paymentStatus === "Hủy và chưa hoàn tiền" &&
+              record.status === "Canceled" &&
+              auth.loggedInUser.role === "Admin" && (
+                <Button
+                  onClick={() => {
+                    axiosClient
+                      .patch("/orders/" + record._id, {
+                        paymentStatus: "Hủy và đã hoàn tiền",
+                      })
+                      .then((response) => {
+                        message.success("Đã hoàn tiền cho khách hàng!");
+                        setRefresh((f) => f + 1);
+                      });
+                  }}
+                >
+                  Hoàn tiền
+                </Button>
+              )}
+            {record.paymentStatus === "Chưa thanh toán" &&
+              record.status === "Completed" && (
+                <Button
+                  onClick={() => {
+                    axiosClient
+                      .patch("/orders/" + record._id, {
+                        paymentStatus: "Đã thanh toán",
+                        receiveMoneyConfirmId: employeeLoginId,
+                      })
+                      .then((response) => {
+                        message.success("Đã hoàn tiền cho khách hàng!");
+                        setRefresh((f) => f + 1);
+                      });
+                  }}
+                >
+                  Đã nhận tiền
+                </Button>
+              )}
             {record.status === "Canceled" ? (
               <Popconfirm
                 disabled={record.importStatus === "Đã nhập kho"}
                 style={{ width: 800 }}
                 title="Hàng của đơn bị hủy đã được nhập kho?"
                 onConfirm={() => {
-                  setRefresh((f) => f + 1)
+                  setRefresh((f) => f + 1);
                   setDelectedOrder(record);
                   const id = record._id;
                   delectedOrder.orderDetails.forEach(async (orderDetail) => {
@@ -456,7 +488,9 @@ export default function Orders() {
                       message.error("Lỗi!");
                     });
                 }}
-                onCancel={() => {setRefresh((f) => f + 1)}}
+                onCancel={() => {
+                  setRefresh((f) => f + 1);
+                }}
                 okText="Đồng ý"
                 cancelText="Đóng"
               >
@@ -477,7 +511,7 @@ export default function Orders() {
                   type="primary"
                   ghost
                   onClick={async (values) => {
-                    setRefresh((f) => f + 1)
+                    setRefresh((f) => f + 1);
                     if (record.shippingFee === 0 && !record.shipperId) {
                       message.error(
                         "Hãy chọn shipper trước khi xác nhận đơn hàng!"
@@ -497,26 +531,48 @@ export default function Orders() {
                   icon={<CheckOutlined />}
                   disabled={isDisabled}
                 />
-                {isChanged ? (
+                {isChanged | record.customerId ? (
                   <Popconfirm
                     style={{ width: 800 }}
                     title="Are you sure to cancel?"
                     onConfirm={() => {
-                      setRefresh((f) => f + 1)
+                      setRefresh((f) => f + 1);
                       setDelectedOrder(record);
                       // Cancel
                       const id = record._id;
-                      axiosClient
-                        .patch("/orders/" + id, { status: "Canceled" })
-                        .then((response) => {
-                          message.success("Đơn hàng đã bị hủy!");
-                          setRefresh((f) => f + 1);
-                        })
-                        .catch((err) => {
-                          message.error("Hủy bị lỗi!");
-                        });
+                      if (record.paymentStatus === "Đã thanh toán") {
+                        axiosClient
+                          .patch("/orders/" + id, {
+                            status: "Canceled",
+                            paymentStatus: "Hủy và chưa hoàn tiền",
+                            importStatus: "Chờ nhập kho",
+                          })
+                          .then((response) => {
+                            message.success("Đơn hàng đã bị hủy!");
+                            setRefresh((f) => f + 1);
+                          })
+                          .catch((err) => {
+                            message.error("Hủy bị lỗi!");
+                          });
+                      } else {
+                        axiosClient
+                          .patch("/orders/" + id, {
+                            status: "Canceled",
+                            paymentStatus: "Hủy",
+                            importStatus: "Chờ nhập kho",
+                          })
+                          .then((response) => {
+                            message.success("Đơn hàng đã bị hủy!");
+                            setRefresh((f) => f + 1);
+                          })
+                          .catch((err) => {
+                            message.error("Hủy bị lỗi!");
+                          });
+                      }
                     }}
-                    onCancel={() => {setRefresh((f) => f + 1)}}
+                    onCancel={() => {
+                      setRefresh((f) => f + 1);
+                    }}
                     okText="Đồng ý"
                     cancelText="Đóng"
                   >
@@ -536,7 +592,7 @@ export default function Orders() {
                     style={{ width: 800 }}
                     title="Are you sure to delete?"
                     onConfirm={() => {
-                      setRefresh((f) => f + 1)
+                      setRefresh((f) => f + 1);
                       setDelectedOrder(record);
                       // DELETE
                       const id = record._id;
@@ -567,7 +623,9 @@ export default function Orders() {
                         });
                       console.log("DELETE", record);
                     }}
-                    onCancel={() => {setRefresh((f) => f + 1)}}
+                    onCancel={() => {
+                      setRefresh((f) => f + 1);
+                    }}
                     okText="Đồng ý"
                     cancelText="Đóng"
                   >
@@ -747,7 +805,8 @@ export default function Orders() {
               "/variants/" +
               values.colorId +
               "/sizes/" +
-              values.sizeId + "/order"
+              values.sizeId +
+              "/order"
           );
           axiosClient
             .patch(
@@ -756,7 +815,8 @@ export default function Orders() {
                 "/variants/" +
                 values.colorId +
                 "/sizes/" +
-                values.sizeId +"/order",
+                values.sizeId +
+                "/order",
               { quantity: remainQuantity.data.quantity - values.quantity }
             )
             .then((response) => {
@@ -804,7 +864,7 @@ export default function Orders() {
         open={selectedOrder}
         onOk={() => setSelectedOrder(null)}
         onCancel={() => {
-          setRefresh((f) => f + 1)
+          setRefresh((f) => f + 1);
           setSelectedOrder(null);
         }}
       >
@@ -818,10 +878,8 @@ export default function Orders() {
               <Descriptions.Item label="Trạng thái">
                 {selectedOrder.status}
               </Descriptions.Item>
-              <Descriptions.Item label="Khách hàng">
-                {selectedOrder.customer
-                  ? selectedOrder.customer.fullName
-                  : selectedOrder.customerName}
+              <Descriptions.Item label="Người nhận">
+                {selectedOrder.receiverName}
               </Descriptions.Item>
               <Descriptions.Item label="Địa chỉ giao hàng">
                 {selectedOrder?.address}
@@ -925,7 +983,7 @@ export default function Orders() {
             <div style={{ marginTop: "10px" }}>
               <Button
                 onClick={() => {
-                  setRefresh((f) => f + 1)
+                  setRefresh((f) => f + 1);
                   setAddProductsModalVisible(true);
                 }}
               >
@@ -942,7 +1000,7 @@ export default function Orders() {
                 createForm.submit();
               }}
               onCancel={() => {
-                setRefresh((f) => f + 1)
+                setRefresh((f) => f + 1);
                 setAddProductsModalVisible(false);
               }}
             >
@@ -1048,7 +1106,7 @@ export default function Orders() {
                 updateForm.submit();
               }}
               onCancel={() => {
-                setRefresh((f) => f + 1)
+                setRefresh((f) => f + 1);
                 setSelectEditRecord(null);
               }}
               okText="Lưu thông tin"
@@ -1087,7 +1145,7 @@ export default function Orders() {
         title="Chi tiết đơn hàng"
         open={selectedOrderView}
         onClose={() => {
-          setRefresh((f) => f + 1)
+          setRefresh((f) => f + 1);
           setSelectedOrderView(null);
         }}
       >
@@ -1101,10 +1159,8 @@ export default function Orders() {
               <Descriptions.Item label="Trạng thái">
                 {selectedOrderView.status}
               </Descriptions.Item>
-              <Descriptions.Item label="Khách hàng">
-                {selectedOrderView.customer
-                  ? selectedOrderView.customer.fullName
-                  : selectedOrderView.customerName}
+              <Descriptions.Item label="Người nhận">
+                {selectedOrderView.receiverName}
               </Descriptions.Item>
               <Descriptions.Item label="Địa chỉ giao hàng">
                 {selectedOrderView.address}

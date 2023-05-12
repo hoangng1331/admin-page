@@ -174,13 +174,13 @@ export default function ConfirmedOrders() {
   // Orders
   const columns = [
     {
-      title: "Tên khách hàng",
+      title: "Tên người nhận",
       dataIndex: "customer",
       key: "customer",
       render: (text, record) => {
         return (
           <strong>
-            {record.customer ? record.customer.fullName : record.customerName}
+            {record.receiverName}
           </strong>
         );
       },
@@ -227,7 +227,7 @@ export default function ConfirmedOrders() {
           <strong>
             {record?.employeeLogin?.fullName
               ? record.employeeLogin.fullName
-              : employeeName}
+              : employeeName ? employeeName: record.customer.fullName }
           </strong>
         );
       },
@@ -346,10 +346,8 @@ export default function ConfirmedOrders() {
               <Descriptions.Item label="Trạng thái">
                 {selectedOrderView.status}
               </Descriptions.Item>
-              <Descriptions.Item label="Khách hàng">
-                {selectedOrderView.customer
-                  ? selectedOrderView.customer.fullName
-                  : selectedOrderView.customerName}
+              <Descriptions.Item label="Người nhận">
+                {selectedOrderView.receiverName}
               </Descriptions.Item>
               <Descriptions.Item label="Địa chỉ giao hàng">
                 {selectedOrderView.address}

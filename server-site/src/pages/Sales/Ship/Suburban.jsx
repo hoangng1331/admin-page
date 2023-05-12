@@ -163,13 +163,13 @@ export default function SuburbanOrders() {
   // Orders
   const columns = [
     {
-      title: "Tên khách hàng",
+      title: "Tên người nhận",
       dataIndex: "customer",
       key: "customer",
       render: (text, record) => {
         return (
           <strong>
-            {record.customer ? record.customer.fullName : record.customerName}
+            {record.receiverName}
           </strong>
         );
       },
@@ -214,9 +214,9 @@ export default function SuburbanOrders() {
           });
         return (
           <strong>
-            {record?.employeeLogin?.fullName
+             {record?.employeeLogin?.fullName
               ? record.employeeLogin.fullName
-              : employeeName}
+              : employeeName ? employeeName: record.customer.fullName }
           </strong>
         );
       },
@@ -258,6 +258,24 @@ export default function SuburbanOrders() {
               }}
               icon={<EyeOutlined />}
             />
+            {record.paymentStatus === "Hủy và chưa hoàn tiền" &&
+              record.status === "Canceled" &&
+              auth.loggedInUser.role === "Admin" && (
+                <Button
+                  onClick={() => {
+                    axiosClient
+                      .patch("/orders/" + record._id, {
+                        paymentStatus: "Hủy và đã hoàn tiền",
+                      })
+                      .then((response) => {
+                        message.success("Đã hoàn tiền cho khách hàng!");
+                        setRefresh((f) => f + 1);
+                      });
+                  }}
+                >
+                  Hoàn tiền
+                </Button>
+              )}
             {record.status === "Canceled" ? (
               <Popconfirm
                 disabled={record.importStatus === "Đã nhập kho"}
@@ -377,38 +395,50 @@ export default function SuburbanOrders() {
                   />
                 )}
                 {isChanged ? (
-                  <Popconfirm
-                    style={{ width: 800 }}
-                    title="Are you sure to cancel?"
-                    onConfirm={() => {
-                      setRefresh((f) => f + 1)
-                      setDelectedOrder(record);
-                      // Cancel
-                      const id = record._id;
-                      axiosClient
-                        .patch("/orders/" + id, { status: "Canceled", paymentStatus: "Hủy", importStatus: "Chờ nhập kho" })
-                        .then((response) => {
-                          message.success("Đơn hàng đã bị hủy!");
-                          setRefresh((f) => f + 1);
-                        })
-                        .catch((err) => {
-                          message.error("Hủy bị lỗi!");
-                        });
+                   <Popconfirm
+                   style={{ width: 800 }}
+                   title="Are you sure to cancel?"
+                   onConfirm={() => {
+                     setRefresh((f) => f + 1)
+                     setDelectedOrder(record);
+                     // Cancel
+                     const id = record._id;
+                     if (record.paymentStatus==="Đã thanh toán") {
+                       axiosClient
+                       .patch("/orders/" + id, { status: "Canceled", paymentStatus: "Hủy và chưa hoàn tiền", importStatus: "Chờ nhập kho" })
+                       .then((response) => {
+                         message.success("Đơn hàng đã bị hủy!");
+                         setRefresh((f) => f + 1);
+                       })
+                       .catch((err) => {
+                         message.error("Hủy bị lỗi!");
+                       });
+                     } else {
+                       axiosClient
+                       .patch("/orders/" + id, { status: "Canceled", paymentStatus: "Hủy", importStatus: "Chờ nhập kho" })
+                       .then((response) => {
+                         message.success("Đơn hàng đã bị hủy!");
+                         setRefresh((f) => f + 1);
+                       })
+                       .catch((err) => {
+                         message.error("Hủy bị lỗi!");
+                       });
+                     }                    
                     }}
-                    onCancel={() => {setRefresh((f) => f + 1)}}
-                    okText="Đồng ý"
-                    cancelText="Đóng"
-                  >
-                    <Button
-                      danger
-                      type="dashed"
-                      onClick={() => {
-                        setDelectedOrder(record);
-                        setRefresh((f) => f + 1);
-                      }}
-                      icon={<CloseOutlined />}
-                    />
-                  </Popconfirm>
+                   onCancel={() => {setRefresh((f) => f + 1)}}
+                   okText="Đồng ý"
+                   cancelText="Đóng"
+                 >
+                   <Button
+                     danger
+                     type="dashed"
+                     onClick={() => {
+                       setDelectedOrder(record);
+                       setRefresh((f) => f + 1);
+                     }}
+                     icon={<CloseOutlined />}
+                   />
+                 </Popconfirm>
                 ) : (
                   <Popconfirm
                     disabled={isDisabled}
@@ -539,10 +569,8 @@ export default function SuburbanOrders() {
               <Descriptions.Item label="Trạng thái">
                 {selectedOrderView.status}
               </Descriptions.Item>
-              <Descriptions.Item label="Khách hàng">
-                {selectedOrderView.customer
-                  ? selectedOrderView.customer.fullName
-                  : selectedOrderView.customerName}
+              <Descriptions.Item label="Người nhận">
+                {selectedOrderView.receiverName}
               </Descriptions.Item>
               <Descriptions.Item label="Địa chỉ giao hàng">
                 {selectedOrderView.address}

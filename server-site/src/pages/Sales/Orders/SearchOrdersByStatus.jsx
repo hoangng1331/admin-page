@@ -8,7 +8,8 @@ import {
   Descriptions,
   Divider,
   Switch,
-  Drawer
+  Drawer,
+  Space
 } from "antd";
 import {
   DeliveryArea,
@@ -136,13 +137,13 @@ export default function SearchOrdersByStatus() {
   ];
   const columns = [
     {
-      title: "Tên khách hàng",
+      title: "Tên người nhận",
       dataIndex: "customer",
       key: "customer",
       render: (text, record) => {
         return (
           <strong>
-            {record.customer ? record.customer.fullName : record.customerName}
+            {record.receiverName}
           </strong>
         );
       },
@@ -187,9 +188,9 @@ export default function SearchOrdersByStatus() {
           });
         return (
           <strong>
-            {record?.employeeLogin?.fullName
+             {record?.employeeLogin?.fullName
               ? record.employeeLogin.fullName
-              : employeeName}
+              : employeeName ? employeeName: record.customer.fullName }
           </strong>
         );
       },
@@ -210,7 +211,8 @@ export default function SearchOrdersByStatus() {
       key: "actions",
       render: (text, record) => {
         return (
-          <Button
+          <Space>
+             <Button
             onClick={() => {
               setRefresh((f) => f + 1)
               setSelectedOrderView(record);
@@ -222,6 +224,26 @@ export default function SearchOrdersByStatus() {
             }}
             icon={<EyeOutlined />}
           />
+            {record.paymentStatus === "Hủy và chưa hoàn tiền" &&
+              record.status === "Canceled" &&
+              auth.loggedInUser.role === "Admin" && (
+                <Button
+                  onClick={() => {
+                    axiosClient
+                      .patch("/orders/" + record._id, {
+                        paymentStatus: "Hủy và đã hoàn tiền",
+                      })
+                      .then((response) => {
+                        message.success("Đã hoàn tiền cho khách hàng!");
+                        setRefresh((f) => f + 1);
+                      });
+                  }}
+                >
+                  Hoàn tiền
+                </Button>
+              )}
+          </Space>
+         
         );
       },
     },
@@ -430,10 +452,8 @@ export default function SearchOrdersByStatus() {
               <Descriptions.Item label="Trạng thái">
                 {selectedOrderView.status}
               </Descriptions.Item>
-              <Descriptions.Item label="Khách hàng">
-                {selectedOrderView.customer
-                  ? selectedOrderView.customer.fullName
-                  : selectedOrderView.customerName}
+              <Descriptions.Item label="Người nhận">
+                {selectedOrderView.receiverName}
               </Descriptions.Item>
               <Descriptions.Item label="Địa chỉ giao hàng">
                 {selectedOrderView.address}

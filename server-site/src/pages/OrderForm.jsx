@@ -339,7 +339,7 @@ const OrderForm = () => {
       } else {
         axios
           .post("http://localhost:5000/orders", {
-            customerName: values.customerName,
+            receiverName: values.receiverName,
             phoneNumber: values.phoneNumber,
             email: values.email,
             address: values.address,
@@ -400,8 +400,8 @@ const OrderForm = () => {
         autoComplete="on"
       >
         <Form.Item
-          name="customerName"
-          label="Tên khách hàng"
+          name="receiverName"
+          label="Tên người nhận"
           rules={[{ required: true, message: "Chưa nhập tên khách hàng" }]}
         >
           <Input />

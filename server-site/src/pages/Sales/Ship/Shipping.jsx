@@ -167,13 +167,13 @@ export default function ShippingOrders() {
   // Orders
   const columns = [
     {
-      title: "Tên khách hàng",
+      title: "Tên người nhận",
       dataIndex: "customer",
       key: "customer",
       render: (text, record) => {
         return (
           <strong>
-            {record.customer ? record.customer.fullName : record.customerName}
+            {record.receiverName}
           </strong>
         );
       },
@@ -218,9 +218,9 @@ export default function ShippingOrders() {
           });
         return (
           <strong>
-            {record?.employeeLogin?.fullName
+             {record?.employeeLogin?.fullName
               ? record.employeeLogin.fullName
-              : employeeName}
+              : employeeName ? employeeName: record.customer.fullName }
           </strong>
         );
       },
@@ -271,37 +271,49 @@ export default function ShippingOrders() {
               icon={<CheckOutlined />}
             />
             <Popconfirm
-                style={{ width: 800 }}
-                title="Khách hàng muốn hủy đơn?"
-                onConfirm={() => {
-                  setRefresh((f) => f + 1)
-                  setDelectedOrder(record);
-                  // Cancel
-                  const id = record._id;
-                  axiosClient
-                    .patch("/orders/" + id, { status: "Canceled", importStatus: "Chờ nhập kho", paymentStatus: "Hủy" })
-                    .then((response) => {
-                      message.success("Đơn hàng đã bị hủy, hãy đem hàng về kho!");
-                      setRefresh((f) => f + 1);
-                    })
-                    .catch((err) => {
-                      message.error("Hủy bị lỗi!");
-                    });
-                }}
-                onCancel={() => {setRefresh((f) => f + 1)}}
-                okText="Đồng ý"
-                cancelText="Đóng"
-              >
-                <Button
-                  danger
-                  type="dashed"
-                  onClick={() => {
-                    setDelectedOrder(record);
-                    setRefresh((f) => f + 1);
-                  }}
-                  icon={<CloseOutlined />}
-                />
-              </Popconfirm>
+                    style={{ width: 800 }}
+                    title="Are you sure to cancel?"
+                    onConfirm={() => {
+                      setRefresh((f) => f + 1)
+                      setDelectedOrder(record);
+                      // Cancel
+                      const id = record._id;
+                      if (record.paymentStatus==="Đã thanh toán") {
+                        axiosClient
+                        .patch("/orders/" + id, { status: "Canceled", paymentStatus: "Hủy và chưa hoàn tiền", importStatus: "Chờ nhập kho" })
+                        .then((response) => {
+                          message.success("Đơn hàng đã bị hủy!");
+                          setRefresh((f) => f + 1);
+                        })
+                        .catch((err) => {
+                          message.error("Hủy bị lỗi!");
+                        });
+                      } else {
+                        axiosClient
+                        .patch("/orders/" + id, { status: "Canceled", paymentStatus: "Hủy", importStatus: "Chờ nhập kho" })
+                        .then((response) => {
+                          message.success("Đơn hàng đã bị hủy!");
+                          setRefresh((f) => f + 1);
+                        })
+                        .catch((err) => {
+                          message.error("Hủy bị lỗi!");
+                        });
+                      }                    
+                     }}
+                    onCancel={() => {setRefresh((f) => f + 1)}}
+                    okText="Đồng ý"
+                    cancelText="Đóng"
+                  >
+                    <Button
+                      danger
+                      type="dashed"
+                      onClick={() => {
+                        setDelectedOrder(record);
+                        setRefresh((f) => f + 1);
+                      }}
+                      icon={<CloseOutlined />}
+                    />
+                  </Popconfirm>
           </Space>
         );
       },
@@ -371,10 +383,8 @@ export default function ShippingOrders() {
               <Descriptions.Item label="Trạng thái">
                 {selectedOrderView.status}
               </Descriptions.Item>
-              <Descriptions.Item label="Khách hàng">
-                {selectedOrderView.customer
-                  ? selectedOrderView.customer.fullName
-                  : selectedOrderView.customerName}
+              <Descriptions.Item label="Người nhận">
+                {selectedOrderView.receiverName}
               </Descriptions.Item>
               <Descriptions.Item label="Địa chỉ giao hàng">
                 {selectedOrderView.address}

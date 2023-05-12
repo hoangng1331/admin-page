@@ -73,7 +73,7 @@ export default function Account() {
       phoneNumber: employee?.phoneNumber,
       email: employee?.email,
       address: employee?.address,
-      birthday: employee ? moment(employee.birthday).format("DD/MM/YYYY") : undefined,
+      birthday: employee ? moment(employee.birthday).format("YYYY-MM-DD") : undefined,
       role: employee?.role,
       deliveryArea: employee?.deliveryArea,
       username: employee?.username,
@@ -190,7 +190,12 @@ export default function Account() {
       </Form.Item>
 
       <Form.Item label="Ngày sinh" name="birthday">
-        <Input format="DD/MM/YYYY"/>
+      <input
+                type="date"
+                className="form-control"
+                name="birthday"
+                required
+              />
       </Form.Item>
       <Form.Item
           label="Vị trí công việc"

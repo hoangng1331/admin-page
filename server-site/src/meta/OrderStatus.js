@@ -17,6 +17,8 @@ export const PaymentStatus = [
   { label: 'Đã thanh toán', value: 'Đã thanh toán' },
   { label: 'Chưa thanh toán', value: 'Chưa thanh toán' },
   { label: 'Đã hủy', value: 'Hủy' },
+  { label: 'Đã hủy và chưa hoàn lại tiền', value: 'Hủy và chưa hoàn tiền' },
+  { label: 'Đã hủy và đã hoàn lại tiền', value: 'Hủy và đã hoàn tiền' },
 ];
 export const DeliveryArea = [
   { label: 'Tất cả', value: '' },

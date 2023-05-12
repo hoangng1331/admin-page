@@ -31,7 +31,6 @@ import SuburbanOrders from "./pages/Sales/Ship/Suburban";
 import Promotion from "./pages/Management/Products/Promotion";
 import Status from "./pages/Management/Employees/Status";
 
-// import Report from './pages/Sales/Ship/Report/Revenue';
 numeral.locale("vi");
 
 const { Header, Footer, Sider, Content } = Layout;
@@ -78,14 +77,6 @@ function App() {
             .post("/auth/refresh-token", {
               refreshToken: refreshToken,
             })
-            // .then((response) => {
-            //   axiosClient.get("/auth/authentication", e).catch((err) => {
-            //     message.warning(
-            //       "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại!"
-            //     );
-            //     logout();
-            //   });
-            // })
             .catch((err) => {
               axiosClient.get("/auth/authentication", e).catch((err) => {
                 message.warning(
